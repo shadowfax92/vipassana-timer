@@ -297,6 +297,13 @@ header .subtitle .source-link:hover {
   color: white;
 }
 
+.screen-hint {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
 /* Complete Screen */
 .complete {
   flex: 1;

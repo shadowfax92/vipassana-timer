@@ -71,6 +71,8 @@ export function SessionActive({
           Stop Session
         </button>
       </div>
+
+      <p className="screen-hint">Keep screen on during session</p>
     </div>
   )
 }

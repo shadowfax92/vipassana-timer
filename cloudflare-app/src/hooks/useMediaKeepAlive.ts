@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect, useState } from 'react'
 import { MediaKeepAlive } from '../lib/MediaKeepAlive'
+import type { AudioProgress } from '../types'
 
 /**
  * React hook for enabling background audio playback
@@ -14,6 +15,7 @@ import { MediaKeepAlive } from '../lib/MediaKeepAlive'
  */
 export function useMediaKeepAlive() {
   const [isActive, setIsActive] = useState(false)
+  const [progress, setProgress] = useState<AudioProgress>({ current: 0, duration: 0 })
   const keepAliveRef = useRef<MediaKeepAlive | null>(null)
   const outroAudioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -23,7 +25,13 @@ export function useMediaKeepAlive() {
     outroAudioRef.current = new Audio()
     outroAudioRef.current.setAttribute('playsinline', 'true')
 
-    return () => keepAliveRef.current?.stop()
+    // Set up progress callback
+    keepAliveRef.current.setProgressCallback(setProgress)
+
+    return () => {
+      keepAliveRef.current?.setProgressCallback(null)
+      keepAliveRef.current?.stop()
+    }
   }, [])
 
   /**
@@ -50,12 +58,24 @@ export function useMediaKeepAlive() {
   )
 
   /**
-   * Stop the media keep-alive system
+   * Stop current playback but keep element primed for next track
+   * Use when skipping a phase but needing to play another outro phase
+   */
+  const stopPlayback = useCallback(() => {
+    keepAliveRef.current?.stopPlayback()
+  }, [])
+
+  /**
+   * Fully stop the media keep-alive system
+   * Use when session ends
    */
   const stop = useCallback(() => {
     keepAliveRef.current?.stop()
     setIsActive(false)
+    setProgress({ current: 0, duration: 0 })
   }, [])
 
-  return { isActive, start, playOutro, stop }
+  const timeRemaining = Math.max(0, Math.ceil(progress.duration - progress.current))
+
+  return { isActive, progress, timeRemaining, start, playOutro, stopPlayback, stop }
 }

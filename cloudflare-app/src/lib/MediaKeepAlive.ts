@@ -13,10 +13,24 @@
 
 import { SILENT_MP3, createSilentAudio } from './media'
 
+export interface AudioProgress {
+  current: number
+  duration: number
+}
+
 export class MediaKeepAlive {
   private silentAudio: HTMLAudioElement | null = null
   private primedAudio: HTMLAudioElement | null = null
   private active = false
+  private progressCallback: ((progress: AudioProgress) => void) | null = null
+  private fadeInterval: number | null = null
+
+  /**
+   * Set a callback to receive audio progress updates
+   */
+  setProgressCallback(callback: ((progress: AudioProgress) => void) | null): void {
+    this.progressCallback = callback
+  }
 
   /**
    * Start keeping media session alive
@@ -79,6 +93,12 @@ export class MediaKeepAlive {
 
       const audio = this.primedAudio
 
+      // Clear any existing fade interval
+      if (this.fadeInterval) {
+        clearInterval(this.fadeInterval)
+        this.fadeInterval = null
+      }
+
       // The magic: swap source on already-playing element
       audio.src = newSrc
       audio.loop = options?.loop ?? false
@@ -91,14 +111,38 @@ export class MediaKeepAlive {
         audio.volume = options?.volume ?? 1.0
       }
 
+      // Set up progress tracking
+      audio.ontimeupdate = () => {
+        if (this.progressCallback) {
+          this.progressCallback({
+            current: audio.currentTime,
+            duration: audio.duration || 0
+          })
+        }
+      }
+
+      audio.onloadedmetadata = () => {
+        if (this.progressCallback) {
+          this.progressCallback({
+            current: 0,
+            duration: audio.duration || 0
+          })
+        }
+      }
+
       // Set up onended handler before loading
       audio.onended = () => {
         audio.onended = null
+        audio.ontimeupdate = null
+        if (this.progressCallback) {
+          this.progressCallback({ current: 0, duration: 0 })
+        }
         resolve()
       }
 
       audio.onerror = () => {
         audio.onerror = null
+        audio.ontimeupdate = null
         reject(new Error(`Failed to play ${newSrc}`))
       }
 
@@ -115,11 +159,12 @@ export class MediaKeepAlive {
             const volumeStep = targetVolume / steps
             let currentStep = 0
 
-            const fadeInterval = window.setInterval(() => {
+            this.fadeInterval = window.setInterval(() => {
               currentStep++
               audio.volume = Math.min(targetVolume, currentStep * volumeStep)
-              if (currentStep >= steps) {
-                clearInterval(fadeInterval)
+              if (currentStep >= steps && this.fadeInterval) {
+                clearInterval(this.fadeInterval)
+                this.fadeInterval = null
               }
             }, 100)
           }
@@ -131,7 +176,47 @@ export class MediaKeepAlive {
     })
   }
 
+  /**
+   * Stop current playback but keep the primed audio element ready for next track
+   * Use this when skipping a phase but needing to play the next outro phase
+   */
+  stopPlayback(): void {
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval)
+      this.fadeInterval = null
+    }
+
+    if (this.primedAudio) {
+      this.primedAudio.pause()
+      this.primedAudio.onended = null
+      this.primedAudio.ontimeupdate = null
+      this.primedAudio.onerror = null
+      // Re-prime with silent audio so it's ready for next swap
+      this.primedAudio.src = SILENT_MP3
+      this.primedAudio.loop = true
+      this.primedAudio.volume = 0.01
+      this.primedAudio.play().catch(() => {
+        // Ignore errors on re-prime
+      })
+    }
+
+    if (this.progressCallback) {
+      this.progressCallback({ current: 0, duration: 0 })
+    }
+
+    console.log('[MediaKeepAlive] Playback stopped, element still primed')
+  }
+
+  /**
+   * Fully stop and clean up all audio
+   * Use this when session ends
+   */
   stop(): void {
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval)
+      this.fadeInterval = null
+    }
+
     if (this.silentAudio) {
       this.silentAudio.pause()
       this.silentAudio.src = ''
@@ -140,7 +225,14 @@ export class MediaKeepAlive {
 
     if (this.primedAudio) {
       this.primedAudio.pause()
+      this.primedAudio.onended = null
+      this.primedAudio.ontimeupdate = null
+      this.primedAudio.onerror = null
       this.primedAudio = null
+    }
+
+    if (this.progressCallback) {
+      this.progressCallback({ current: 0, duration: 0 })
     }
 
     this.active = false

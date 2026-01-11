@@ -47,7 +47,14 @@ function App() {
 
   // Hooks
   useScreenWake(phase) // Auto-enables during active session, handles visibility changes
-  const { start: startKeepAlive, playOutro, stop: stopKeepAlive } = useMediaKeepAlive()
+  const {
+    start: startKeepAlive,
+    playOutro,
+    stopPlayback: stopOutroPlayback,
+    stop: stopKeepAlive,
+    progress: outroProgress,
+    timeRemaining: outroTimeRemaining
+  } = useMediaKeepAlive()
   const { controls: audioControls, progress: audioProgress, timeRemaining: audioTimeRemaining } = useAudioPlayer()
 
   const handleMeditationComplete = useCallback(() => {
@@ -133,12 +140,19 @@ function App() {
     if (phase === 'meditation') {
       timerControls.stop()
     }
-    // Stop keep-alive audio when skipping outro phases
+    // Stop outro playback when skipping outro phases (keeps element primed for next phase)
     if (phase === 'outro_chanting' || phase === 'outro') {
-      stopKeepAlive()
+      stopOutroPlayback()
     }
     setPhase(getNextPhase(phase, sessionConfig))
-  }, [audioControls, timerControls, phase, sessionConfig, stopKeepAlive])
+  }, [audioControls, timerControls, phase, sessionConfig, stopOutroPlayback])
+
+  // Stop keep-alive when session ends (handles both natural completion and stop button)
+  useEffect(() => {
+    if (phase === 'complete' || phase === 'idle') {
+      stopKeepAlive()
+    }
+  }, [phase, stopKeepAlive])
 
   // Handle phase transitions
   useEffect(() => {
@@ -166,7 +180,10 @@ function App() {
           if (devMode) {
             devTimeout = window.setTimeout(() => {
               audioControls.stop()
-              stopKeepAlive() // Also stop keep-alive audio in dev mode skip
+              // Stop outro playback when skipping (keep-alive stops via phase effect)
+              if (phase === 'outro_chanting' || phase === 'outro') {
+                stopOutroPlayback()
+              }
               if (phaseRef.current === phase) {
                 setPhase(getNextPhase(phase, sessionConfig))
               }
@@ -206,7 +223,7 @@ function App() {
         clearTimeout(devTimeout)
       }
     }
-  }, [phase, sessionConfig, audioControls, timerControls, playOutro, stopKeepAlive])
+  }, [phase, sessionConfig, audioControls, timerControls, playOutro, stopOutroPlayback])
 
   const isSessionActive = phase !== 'idle' && phase !== 'complete'
 
@@ -251,8 +268,8 @@ function App() {
         <SessionActive
           phase={phase}
           meditationTimeRemaining={meditationTimeRemaining}
-          audioProgress={audioProgress}
-          audioTimeRemaining={audioTimeRemaining}
+          audioProgress={phase === 'outro_chanting' || phase === 'outro' ? outroProgress : audioProgress}
+          audioTimeRemaining={phase === 'outro_chanting' || phase === 'outro' ? outroTimeRemaining : audioTimeRemaining}
           onSkip={skipPhase}
           onStop={stopSession}
         />

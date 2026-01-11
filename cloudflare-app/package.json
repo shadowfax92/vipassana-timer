@@ -4,14 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "wrangler pages dev --port 8787",
+    "dev:vite": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "npm run build && wrangler pages deploy dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "worker-timers": "^8.0.28"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

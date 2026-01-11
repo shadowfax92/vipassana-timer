@@ -11,7 +11,8 @@ import type {
   SessionConfig
 } from './types'
 
-import { useWakeLock } from './hooks/useWakeLock'
+import { useScreenWake } from './hooks/useScreenWake'
+import { useMediaKeepAlive } from './hooks/useMediaKeepAlive'
 import { useAudioPlayer } from './hooks/useAudioPlayer'
 import { useMeditationTimer } from './hooks/useMeditationTimer'
 
@@ -45,7 +46,8 @@ function App() {
   }, [phase])
 
   // Hooks
-  const { request: requestWakeLock } = useWakeLock(phase)
+  useScreenWake(phase) // Auto-enables during active session, handles visibility changes
+  const { start: startKeepAlive, playOutro, stop: stopKeepAlive } = useMediaKeepAlive()
   const { controls: audioControls, progress: audioProgress, timeRemaining: audioTimeRemaining } = useAudioPlayer()
 
   const handleMeditationComplete = useCallback(() => {
@@ -108,17 +110,22 @@ function App() {
     }
 
     setSessionConfig(config)
-    requestWakeLock()
+
+    // Start media keep-alive for background audio capability
+    // Must be called from user gesture (this is a click handler)
+    startKeepAlive()
+
     setPhase(getFirstPhase(config))
-  }, [metadata, prepareSessionConfig, requestWakeLock])
+  }, [metadata, prepareSessionConfig, startKeepAlive])
 
   // Stop session
   const stopSession = useCallback(() => {
     audioControls.stop()
     timerControls.stop()
+    stopKeepAlive()
     setPhase('idle')
     setSessionConfig(null)
-  }, [audioControls, timerControls])
+  }, [audioControls, timerControls, stopKeepAlive])
 
   // Skip current phase
   const skipPhase = useCallback(() => {
@@ -126,8 +133,12 @@ function App() {
     if (phase === 'meditation') {
       timerControls.stop()
     }
+    // Stop keep-alive audio when skipping outro phases
+    if (phase === 'outro_chanting' || phase === 'outro') {
+      stopKeepAlive()
+    }
     setPhase(getNextPhase(phase, sessionConfig))
-  }, [audioControls, timerControls, phase, sessionConfig])
+  }, [audioControls, timerControls, phase, sessionConfig, stopKeepAlive])
 
   // Handle phase transitions
   useEffect(() => {
@@ -155,16 +166,24 @@ function App() {
           if (devMode) {
             devTimeout = window.setTimeout(() => {
               audioControls.stop()
+              stopKeepAlive() // Also stop keep-alive audio in dev mode skip
               if (phaseRef.current === phase) {
                 setPhase(getNextPhase(phase, sessionConfig))
               }
             }, devSeconds * 1000)
           }
 
-          // Fade in over 30s for intro and outro chanting
-          const fadeInPhases = ['intro', 'outro_chanting']
-          const playOptions = fadeInPhases.includes(phase) ? { fadeInSeconds: 30 } : undefined
-          await audioControls.play(audioFile, playOptions)
+          // Use source-swap technique for outro phases (works from background!)
+          // This is critical: when meditation timer completes in background,
+          // the source-swap allows audio to play from the already-playing element
+          if (phase === 'outro_chanting' || phase === 'outro') {
+            const fadeInSeconds = phase === 'outro_chanting' ? 30 : undefined
+            await playOutro(audioFile, { fadeInSeconds })
+          } else {
+            // Fade in over 30s for intro chanting
+            const playOptions = phase === 'intro' ? { fadeInSeconds: 30 } : undefined
+            await audioControls.play(audioFile, playOptions)
+          }
         }
 
         // Check phase hasn't changed during playback
@@ -187,7 +206,7 @@ function App() {
         clearTimeout(devTimeout)
       }
     }
-  }, [phase, sessionConfig, audioControls, timerControls])
+  }, [phase, sessionConfig, audioControls, timerControls, playOutro, stopKeepAlive])
 
   const isSessionActive = phase !== 'idle' && phase !== 'complete'
 

@@ -1,44 +1,47 @@
-import { useRef, useCallback, useState, useMemo } from 'react'
+import { useRef, useCallback, useState, useMemo, useEffect } from 'react'
+import { ReliableTimer } from '../lib/ReliableTimer'
 
+/**
+ * React hook for meditation timer using ReliableTimer
+ *
+ * Improvements over the old setInterval approach:
+ * - Uses worker-timers (not throttled in background tabs)
+ * - Time-based calculation (Date.now()) - immune to timer drift
+ * - Visibility recovery - catches expired timers when tab resumes
+ */
 export function useMeditationTimer(onComplete: () => void) {
   const [timeRemaining, setTimeRemaining] = useState(0)
-  const timerRef = useRef<number | null>(null)
-  const isRunningRef = useRef(false)
+  const timerRef = useRef<ReliableTimer | null>(null)
+  const onCompleteRef = useRef(onComplete)
+
+  // Keep onComplete ref updated
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
+
+  // Initialize ReliableTimer
+  useEffect(() => {
+    timerRef.current = new ReliableTimer({
+      onTick: setTimeRemaining,
+      onComplete: () => onCompleteRef.current()
+    })
+
+    return () => timerRef.current?.destroy()
+  }, [])
 
   const start = useCallback((minutes: number) => {
     const totalSeconds = minutes * 60
     setTimeRemaining(totalSeconds)
-    isRunningRef.current = true
-
-    timerRef.current = window.setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          if (timerRef.current) {
-            clearInterval(timerRef.current)
-            timerRef.current = null
-          }
-          isRunningRef.current = false
-          // Use setTimeout to avoid calling onComplete during render
-          setTimeout(onComplete, 0)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }, [onComplete])
+    timerRef.current?.start(totalSeconds)
+  }, [])
 
   const stop = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    isRunningRef.current = false
+    timerRef.current?.stop()
     setTimeRemaining(0)
   }, [])
 
-  const isRunning = isRunningRef.current
+  const isRunning = timerRef.current?.isRunning() ?? false
 
-  // Memoize stable object for functions (used in effects)
   const controls = useMemo(() => ({ start, stop }), [start, stop])
 
   return { controls, timeRemaining, isRunning }

@@ -166,6 +166,55 @@ header .subtitle .source-link:hover {
   color: white;
 }
 
+/* Custom duration input */
+.custom-duration-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  animation: slideDown 150ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-duration-input input {
+  width: 80px;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  text-align: center;
+  background: white;
+  color: #2d3748;
+}
+
+.custom-duration-input input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.custom-duration-input .suffix {
+  font-size: 1rem;
+  color: #718096;
+}
+
+.custom-duration-hint {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -406,6 +455,16 @@ header .subtitle .source-link:hover {
     border-color: #667eea;
     background: #667eea;
     color: white;
+  }
+
+  .custom-duration-input input {
+    background: #2d3748;
+    border-color: #667eea;
+    color: #f7fafc;
+  }
+
+  .custom-duration-input .suffix {
+    color: #a0aec0;
   }
 
   .checkbox-label {

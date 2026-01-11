@@ -141,7 +141,10 @@ function App() {
     const runPhase = async () => {
       try {
         if (phase === 'meditation') {
-          const minutes = devMode ? devSeconds / 60 : sessionConfig.meditationMinutes
+          // In dev mode, use 1 second per minute of selected duration (e.g., 12 min -> 12 sec)
+          const minutes = devMode
+            ? sessionConfig.meditationMinutes / 60
+            : sessionConfig.meditationMinutes
           timerControls.start(minutes)
           return
         }

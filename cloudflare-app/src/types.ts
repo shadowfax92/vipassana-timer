@@ -19,7 +19,7 @@ export interface Metadata {
 
 export type SessionMode = "custom" | "guided";
 export type ChantingDuration = "2min" | "5min" | "10min" | "none";
-export type MeditationDuration = 20 | 30 | 60 | 90 | 120;
+export type MeditationDuration = number;
 export type InstructionType = "short" | "long";
 
 export type SessionPhase =

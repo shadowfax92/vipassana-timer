@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react'
 import type {
   SessionMode,
   ChantingDuration,
@@ -25,7 +26,9 @@ interface SessionSetupProps {
 }
 
 const CHANTING_DURATIONS: ChantingDuration[] = ['2min', '5min', '10min']
-const MEDITATION_DURATIONS: MeditationDuration[] = [20, 30, 60, 90, 120]
+const PRESET_DURATIONS = [30, 60] as const
+const MIN_DURATION = 1
+const MAX_DURATION = 180
 
 export function SessionSetup({
   metadata,
@@ -43,6 +46,54 @@ export function SessionSetup({
   setInstructionType,
   onStart
 }: SessionSetupProps) {
+  const isPreset = PRESET_DURATIONS.includes(meditationDuration as 30 | 60)
+  const [isCustomMode, setIsCustomMode] = useState(!isPreset)
+  const [customValue, setCustomValue] = useState(isPreset ? '' : String(meditationDuration))
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isCustomMode && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isCustomMode])
+
+  const handlePresetClick = (duration: number) => {
+    setIsCustomMode(false)
+    setCustomValue('')
+    setMeditationDuration(duration)
+  }
+
+  const handleCustomClick = () => {
+    setIsCustomMode(true)
+    if (customValue) {
+      const num = parseInt(customValue)
+      if (!isNaN(num)) {
+        setMeditationDuration(Math.min(MAX_DURATION, Math.max(MIN_DURATION, num)))
+      }
+    }
+  }
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setCustomValue(val)
+    const num = parseInt(val)
+    if (!isNaN(num) && num >= MIN_DURATION && num <= MAX_DURATION) {
+      setMeditationDuration(num)
+    }
+  }
+
+  const handleCustomBlur = () => {
+    if (!customValue) return
+    const num = parseInt(customValue)
+    if (isNaN(num) || num < MIN_DURATION) {
+      setCustomValue(String(MIN_DURATION))
+      setMeditationDuration(MIN_DURATION)
+    } else if (num > MAX_DURATION) {
+      setCustomValue(String(MAX_DURATION))
+      setMeditationDuration(MAX_DURATION)
+    }
+  }
+
   return (
     <div className="setup">
       <div className="mode-selector">
@@ -98,16 +149,41 @@ export function SessionSetup({
           <section className="option-group">
             <h2>Meditation Duration</h2>
             <div className="button-group">
-              {MEDITATION_DURATIONS.map(dur => (
+              {PRESET_DURATIONS.map(dur => (
                 <button
                   key={dur}
-                  className={meditationDuration === dur ? 'selected' : ''}
-                  onClick={() => setMeditationDuration(dur)}
+                  className={!isCustomMode && meditationDuration === dur ? 'selected' : ''}
+                  onClick={() => handlePresetClick(dur)}
                 >
                   {dur} min
                 </button>
               ))}
+              <button
+                className={isCustomMode ? 'selected' : ''}
+                onClick={handleCustomClick}
+              >
+                {isCustomMode && customValue ? `${customValue} min` : 'Custom'}
+              </button>
             </div>
+            {isCustomMode && (
+              <div className="custom-duration-input">
+                <input
+                  ref={inputRef}
+                  type="number"
+                  inputMode="numeric"
+                  min={MIN_DURATION}
+                  max={MAX_DURATION}
+                  value={customValue}
+                  onChange={handleCustomChange}
+                  onBlur={handleCustomBlur}
+                  placeholder="45"
+                />
+                <span className="suffix">min</span>
+              </div>
+            )}
+            {isCustomMode && (
+              <div className="custom-duration-hint">1 – 180 minutes</div>
+            )}
           </section>
 
           <section className="option-group">

@@ -134,7 +134,7 @@ function App() {
       timerControls.stop()
     }
     // Stop keep-alive audio when skipping outro phases
-    if (phase === 'outro_chanting' || phase === 'outro') {
+    if (phase === 'outro') {
       stopKeepAlive()
     }
     setPhase(getNextPhase(phase, sessionConfig))
@@ -177,7 +177,8 @@ function App() {
           // This is critical: when meditation timer completes in background,
           // the source-swap allows audio to play from the already-playing element
           if (phase === 'outro_chanting' || phase === 'outro') {
-            const fadeInSeconds = phase === 'outro_chanting' ? 30 : undefined
+            const fadeInSeconds = phase === 'outro_chanting' ? 5 : undefined
+            startKeepAlive();
             await playOutro(audioFile, { fadeInSeconds })
           } else {
             // Fade in over 30s for intro chanting

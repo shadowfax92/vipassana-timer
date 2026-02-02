@@ -140,12 +140,14 @@ function App() {
     if (phase === 'meditation') {
       timerControls.stop()
     }
-    // Stop outro playback when skipping outro phases (keeps element primed for next phase)
     if (phase === 'outro_chanting' || phase === 'outro') {
       stopOutroPlayback()
     }
+    if (phase === 'outro') {
+      stopKeepAlive()
+    }
     setPhase(getNextPhase(phase, sessionConfig))
-  }, [audioControls, timerControls, phase, sessionConfig, stopOutroPlayback])
+  }, [audioControls, timerControls, phase, sessionConfig, stopOutroPlayback, stopKeepAlive])
 
   // Stop keep-alive when session ends (handles both natural completion and stop button)
   useEffect(() => {
@@ -194,7 +196,8 @@ function App() {
           // This is critical: when meditation timer completes in background,
           // the source-swap allows audio to play from the already-playing element
           if (phase === 'outro_chanting' || phase === 'outro') {
-            const fadeInSeconds = phase === 'outro_chanting' ? 30 : undefined
+            const fadeInSeconds = phase === 'outro_chanting' ? 5 : undefined
+            startKeepAlive();
             await playOutro(audioFile, { fadeInSeconds })
           } else {
             // Fade in over 30s for intro chanting

@@ -22,6 +22,8 @@ function App() {
 
   const [sessionMode, setSessionMode] = useState<SessionMode>('custom')
   const [enableGong, setEnableGong] = useState(false)
+  const [enableInstructions, setEnableInstructions] = useState(false)
+  const [enableMetta, setEnableMetta] = useState(false)
   const [introDuration, setIntroDuration] = useState<ChantingDuration>('5min')
   const [meditationDuration, setMeditationDuration] = useState<MeditationDuration>(30)
   const [outroDuration, setOutroDuration] = useState<ChantingDuration>('5min')
@@ -41,6 +43,8 @@ function App() {
     const config = {
       mode: sessionMode,
       enableGong,
+      enableInstructions,
+      enableMetta,
       introDuration,
       outroDuration,
       meditationMinutes: meditationDuration,
@@ -75,6 +79,10 @@ function App() {
           setSessionMode={setSessionMode}
           enableGong={enableGong}
           setEnableGong={setEnableGong}
+          enableInstructions={enableInstructions}
+          setEnableInstructions={setEnableInstructions}
+          enableMetta={enableMetta}
+          setEnableMetta={setEnableMetta}
           introDuration={introDuration}
           setIntroDuration={setIntroDuration}
           meditationDuration={meditationDuration}

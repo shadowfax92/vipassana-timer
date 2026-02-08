@@ -7,7 +7,6 @@ export interface Metadata {
   chanting: {
     "2min": ChantingFile[];
     "5min": ChantingFile[];
-    "10min": ChantingFile[];
   };
   guided?: {
     short: string;
@@ -18,13 +17,15 @@ export interface Metadata {
 }
 
 export type SessionMode = "custom" | "guided";
-export type ChantingDuration = "2min" | "5min" | "10min" | "none";
+export type ChantingDuration = "2min" | "5min" | "default" | "none";
 export type MeditationDuration = number;
 export type InstructionType = "short" | "long";
 
 export interface SessionConfig {
   mode: SessionMode;
   enableGong: boolean;
+  enableInstructions: boolean;
+  enableMetta: boolean;
   introDuration: ChantingDuration;
   outroDuration: ChantingDuration;
   meditationMinutes: number;

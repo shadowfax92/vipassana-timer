@@ -10,6 +10,10 @@ function resolveIntro(
     return { enabled: false };
   }
 
+  if (config.introDuration === "default") {
+    return { enabled: true, audioSrc: "/audio/chanting/default-intro.mp3" };
+  }
+
   const file = selectChantingWithRetry(metadata, config.introDuration);
   if (!file) {
     return { enabled: false };

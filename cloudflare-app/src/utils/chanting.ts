@@ -4,7 +4,7 @@ export function getRandomChanting(
   metadata: Metadata | null,
   duration: ChantingDuration
 ): string | null {
-  if (!metadata || duration === 'none') return null
+  if (!metadata || duration === 'none' || duration === 'default') return null
   const chantings = metadata.chanting[duration]
   if (!chantings.length) return null
   return chantings[Math.floor(Math.random() * chantings.length)].file
@@ -26,7 +26,7 @@ export function hasChantingsAvailable(
   metadata: Metadata | null,
   duration: ChantingDuration
 ): boolean {
-  if (duration === 'none') return true
+  if (duration === 'none' || duration === 'default') return true
   if (!metadata) return false
   return metadata.chanting[duration]?.length > 0
 }

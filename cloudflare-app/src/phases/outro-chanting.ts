@@ -10,6 +10,10 @@ function resolveOutroChanting(
     return { enabled: false };
   }
 
+  if (config.outroDuration === "default") {
+    return { enabled: true, audioSrc: "/audio/chanting/default-outro.mp3" };
+  }
+
   const file = selectChantingWithRetry(metadata, config.outroDuration);
   if (!file) return { enabled: false };
 

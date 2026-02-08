@@ -1,6 +1,8 @@
 import { gongPhase } from './gong'
 import { introPhase } from './intro'
+import { instructionsPhase } from './instructions'
 import { meditationPhase } from './meditation'
+import { mettaPhase } from './metta'
 import { outroChantingPhase } from './outro-chanting'
 import { outroPhase } from './outro'
 import { guidedPhase } from './guided'
@@ -10,13 +12,15 @@ import type { SessionConfig, SessionStep, Metadata } from '../types'
 const PHASE_REGISTRY: Record<string, PhaseDefinition> = {
   gong: gongPhase,
   intro: introPhase,
+  instructions: instructionsPhase,
   meditation: meditationPhase,
+  metta: mettaPhase,
   outro_chanting: outroChantingPhase,
   outro: outroPhase,
   guided: guidedPhase,
 }
 
-const CUSTOM_FLOW = ['gong', 'intro', 'meditation', 'outro_chanting', 'outro'] as const
+const CUSTOM_FLOW = ['gong', 'intro', 'instructions', 'meditation', 'metta', 'outro_chanting', 'outro'] as const
 const GUIDED_FLOW = ['gong', 'guided'] as const
 
 export function resolveSessionSteps(config: SessionConfig, metadata: Metadata): SessionStep[] {

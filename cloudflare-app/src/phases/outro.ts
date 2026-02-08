@@ -5,6 +5,6 @@ export const outroPhase: PhaseDefinition = {
   type: 'audio',
   resolve: () => ({
     enabled: true,
-    audioSrc: '/audio/outro.webm',
+    audioSrc: '/audio/outro.mp3',
   }),
 }

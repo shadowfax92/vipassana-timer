@@ -1,71 +1,56 @@
-import type { SessionPhase, AudioProgress } from '../types'
-import { formatTime, getPhaseLabel, getTimeLabel } from '../utils/phase'
+import type { AudioProgress } from '../types'
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
 
 interface SessionActiveProps {
-  phase: SessionPhase
-  meditationTimeRemaining: number
-  audioProgress: AudioProgress
-  audioTimeRemaining: number
+  label: string
+  timeRemaining: number
+  progress: AudioProgress
+  showProgressBar: boolean
   onSkip: () => void
   onStop: () => void
 }
 
-function getSkipButtonLabel(phase: SessionPhase): string {
-  switch (phase) {
-    case 'gong': return 'Skip Gong →'
-    case 'intro': return 'Skip to Meditation →'
-    case 'meditation': return 'End Meditation →'
-    case 'outro_chanting': return 'Skip to Closing →'
-    case 'outro': return 'Skip Closing →'
-    case 'guided_session': return 'End Session →'
-    default: return 'Skip →'
-  }
-}
-
 export function SessionActive({
-  phase,
-  meditationTimeRemaining,
-  audioProgress,
-  audioTimeRemaining,
+  label,
+  timeRemaining,
+  progress,
+  showProgressBar,
   onSkip,
-  onStop
+  onStop,
 }: SessionActiveProps) {
-  const showProgressBar = phase !== 'meditation' && audioProgress.duration > 0
+  const displayTime = timeRemaining > 0
+    ? formatTime(timeRemaining)
+    : progress.duration > 0
+      ? formatTime(Math.max(0, Math.ceil(progress.duration - progress.current)))
+      : '--:--'
 
   return (
     <div className="session">
       <div className="phase-indicator">
-        {getPhaseLabel(phase)}
+        {label}
       </div>
 
       <div className="timer">
-        {phase === 'meditation' ? (
-          <>
-            <div className="time-display">{formatTime(meditationTimeRemaining)}</div>
-            <div className="time-label">remaining</div>
-          </>
-        ) : (
-          <>
-            <div className="time-display">
-              {audioProgress.duration > 0 ? formatTime(audioTimeRemaining) : '--:--'}
-            </div>
-            <div className="time-label">{getTimeLabel(phase)}</div>
-          </>
-        )}
+        <div className="time-display">{displayTime}</div>
       </div>
 
-      {showProgressBar && (
+      {showProgressBar && progress.duration > 0 && (
         <div className="progress-bar-container">
           <div
             className="progress-bar"
-            style={{ width: `${(audioProgress.current / audioProgress.duration) * 100}%` }}
+            style={{ width: `${(progress.current / progress.duration) * 100}%` }}
           />
         </div>
       )}
 
       <div className="session-actions">
         <button className="skip-button" onClick={onSkip}>
-          {getSkipButtonLabel(phase)}
+          Skip →
         </button>
         <button className="stop-button" onClick={onStop}>
           Stop Session

@@ -22,24 +22,25 @@ export type ChantingDuration = "2min" | "5min" | "10min" | "none";
 export type MeditationDuration = number;
 export type InstructionType = "short" | "long";
 
-export type SessionPhase =
-  | "idle"
-  | "gong"
-  | "intro"
-  | "meditation"
-  | "outro_chanting"
-  | "outro"
-  | "guided_session"
-  | "complete";
-
 export interface SessionConfig {
   mode: SessionMode;
   enableGong: boolean;
-  introFile: string | null;
-  outroFile: string | null;
+  introDuration: ChantingDuration;
+  outroDuration: ChantingDuration;
   meditationMinutes: number;
   instructionType: InstructionType;
 }
+
+export interface SessionStep {
+  id: string;
+  label: string;
+  type: "audio" | "timer";
+  audioSrc?: string;
+  durationSeconds?: number;
+  fadeInSeconds?: number;
+}
+
+export type SessionStatus = "idle" | "active" | "complete" | "error";
 
 export interface AudioProgress {
   current: number;

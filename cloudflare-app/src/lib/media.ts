@@ -6,10 +6,45 @@
  * - MediaTick (silent audio for media session keep-alive)
  */
 
-// Silent MP3 for audio keep-alive (MediaTick style)
-// This is a minimal MP3 file that plays silence
-export const SILENT_MP3 =
-  'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYZN4VxkAAAAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYZN4VxkAAAAAAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYZN4VxkAAAAAAAAAAAAAAAAAAA='
+// Generate a proper silent WAV blob URL at runtime.
+// The old base64 MP3 data URI contained only Xing VBR headers with no actual
+// audio frames, which newer Chrome versions reject as malformed.
+// A programmatically-built WAV with real PCM silence is universally supported.
+function generateSilentWavUrl(): string {
+  const sampleRate = 8000
+  const numSamples = sampleRate // 1 second
+  const bitsPerSample = 8
+  const dataSize = numSamples
+
+  const buffer = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(buffer)
+
+  function writeStr(offset: number, str: string) {
+    for (let i = 0; i < str.length; i++)
+      view.setUint8(offset + i, str.charCodeAt(i))
+  }
+
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)           // chunk size
+  view.setUint16(20, 1, true)            // PCM format
+  view.setUint16(22, 1, true)            // mono
+  view.setUint32(24, sampleRate, true)   // sample rate
+  view.setUint32(28, sampleRate, true)   // byte rate
+  view.setUint16(32, 1, true)            // block align
+  view.setUint16(34, bitsPerSample, true)
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+
+  // 128 = silence for 8-bit unsigned PCM
+  new Uint8Array(buffer, 44, dataSize).fill(128)
+
+  return URL.createObjectURL(new Blob([buffer], { type: 'audio/wav' }))
+}
+
+export const SILENT_AUDIO = generateSilentWavUrl()
 
 // Silent WebM video for screen wake fallback (NoSleep.js style)
 // This is a minimal WebM video that loops silently to prevent screen sleep
@@ -64,7 +99,7 @@ export function createSilentVideo(): HTMLVideoElement {
  * Uses the MediaTick technique of playing silent audio
  */
 export function createSilentAudio(): HTMLAudioElement {
-  const audio = new Audio(SILENT_MP3)
+  const audio = new Audio(SILENT_AUDIO)
   audio.loop = true
   audio.volume = 0.01
   audio.setAttribute('playsinline', 'true')

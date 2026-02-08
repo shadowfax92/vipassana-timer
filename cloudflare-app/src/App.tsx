@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 import type {
@@ -7,27 +7,19 @@ import type {
   ChantingDuration,
   MeditationDuration,
   InstructionType,
-  SessionPhase,
-  SessionConfig
 } from './types'
 
-import { useScreenWake } from './hooks/useScreenWake'
-import { useMediaKeepAlive } from './hooks/useMediaKeepAlive'
-import { useAudioPlayer } from './hooks/useAudioPlayer'
-import { useMeditationTimer } from './hooks/useMeditationTimer'
-
-import { selectChantingWithRetry } from './utils/chanting'
-import { getAudioForPhase, getNextPhase, getFirstPhase } from './utils/phase'
+import { useSessionEngine } from './hooks/useSessionEngine'
+import { resolveSessionSteps } from './phases/registry'
 
 import { SessionSetup } from './components/SessionSetup'
 import { SessionActive } from './components/SessionActive'
 import { SessionComplete } from './components/SessionComplete'
+import { SessionError } from './components/SessionError'
 
 function App() {
-  // Metadata
   const [metadata, setMetadata] = useState<Metadata | null>(null)
 
-  // User settings (persisted in setup screen)
   const [sessionMode, setSessionMode] = useState<SessionMode>('custom')
   const [enableGong, setEnableGong] = useState(false)
   const [introDuration, setIntroDuration] = useState<ChantingDuration>('5min')
@@ -35,200 +27,28 @@ function App() {
   const [outroDuration, setOutroDuration] = useState<ChantingDuration>('5min')
   const [instructionType, setInstructionType] = useState<InstructionType>('short')
 
-  // Session state
-  const [phase, setPhase] = useState<SessionPhase>('idle')
-  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
+  const engine = useSessionEngine()
 
-  // Refs for async callbacks
-  const phaseRef = useRef<SessionPhase>('idle')
-  useEffect(() => {
-    phaseRef.current = phase
-  }, [phase])
-
-  // Hooks
-  useScreenWake(phase) // Auto-enables during active session, handles visibility changes
-  const {
-    start: startKeepAlive,
-    playOutro,
-    stopPlayback: stopOutroPlayback,
-    stop: stopKeepAlive,
-    progress: outroProgress,
-    timeRemaining: outroTimeRemaining
-  } = useMediaKeepAlive()
-  const { controls: audioControls, progress: audioProgress, timeRemaining: audioTimeRemaining } = useAudioPlayer()
-
-  const handleMeditationComplete = useCallback(() => {
-    if (phaseRef.current === 'meditation') {
-      setPhase(getNextPhase('meditation', sessionConfig))
-    }
-  }, [sessionConfig])
-
-  const { controls: timerControls, timeRemaining: meditationTimeRemaining } = useMeditationTimer(handleMeditationComplete)
-
-  // Load metadata
   useEffect(() => {
     fetch('/audio/metadata.json')
       .then(res => res.json())
-      .then(data => setMetadata(data))
+      .then(setMetadata)
       .catch(err => console.error('Failed to load metadata:', err))
   }, [])
 
-  // Prepare session config - selects all audio files upfront
-  const prepareSessionConfig = useCallback((): SessionConfig | null => {
-    let introFile: string | null = null
-    let outroFile: string | null = null
-
-    if (sessionMode === 'custom') {
-      if (introDuration !== 'none') {
-        introFile = selectChantingWithRetry(metadata, introDuration)
-        if (!introFile) {
-          console.error('No intro chanting available for', introDuration)
-          return null
-        }
-      }
-
-      if (outroDuration !== 'none') {
-        outroFile = selectChantingWithRetry(metadata, outroDuration)
-        if (!outroFile) {
-          console.error('No outro chanting available for', outroDuration)
-          return null
-        }
-      }
-    }
-
-    return {
+  const handleStart = () => {
+    if (!metadata) return
+    const config = {
       mode: sessionMode,
       enableGong,
-      introFile,
-      outroFile,
+      introDuration,
+      outroDuration,
       meditationMinutes: meditationDuration,
-      instructionType
+      instructionType,
     }
-  }, [metadata, sessionMode, enableGong, introDuration, outroDuration, meditationDuration, instructionType])
-
-  // Start session
-  const startSession = useCallback(() => {
-    if (!metadata) return
-
-    const config = prepareSessionConfig()
-    if (!config) {
-      // Could show user error here
-      return
-    }
-
-    setSessionConfig(config)
-
-    // Start media keep-alive for background audio capability
-    // Must be called from user gesture (this is a click handler)
-    startKeepAlive()
-
-    setPhase(getFirstPhase(config))
-  }, [metadata, prepareSessionConfig, startKeepAlive])
-
-  // Stop session
-  const stopSession = useCallback(() => {
-    audioControls.stop()
-    timerControls.stop()
-    stopKeepAlive()
-    setPhase('idle')
-    setSessionConfig(null)
-  }, [audioControls, timerControls, stopKeepAlive])
-
-  // Skip current phase
-  const skipPhase = useCallback(() => {
-    audioControls.stop()
-    if (phase === 'meditation') {
-      timerControls.stop()
-    }
-    if (phase === 'outro_chanting' || phase === 'outro') {
-      stopOutroPlayback()
-    }
-    if (phase === 'outro') {
-      stopKeepAlive()
-    }
-    setPhase(getNextPhase(phase, sessionConfig))
-  }, [audioControls, timerControls, phase, sessionConfig, stopOutroPlayback, stopKeepAlive])
-
-  // Stop keep-alive when session ends (handles both natural completion and stop button)
-  useEffect(() => {
-    if (phase === 'complete' || phase === 'idle') {
-      stopKeepAlive()
-    }
-  }, [phase, stopKeepAlive])
-
-  // Handle phase transitions
-  useEffect(() => {
-    if (phase === 'idle' || phase === 'complete') return
-    if (!sessionConfig) return
-
-    const devMode = import.meta.env.VITE_DEV_MODE === 'true'
-    const devSeconds = parseInt(import.meta.env.VITE_DEV_MEDITATION_SECONDS || '30', 10)
-    let devTimeout: number | null = null
-
-    const runPhase = async () => {
-      try {
-        if (phase === 'meditation') {
-          // In dev mode, use 1 second per minute of selected duration (e.g., 12 min -> 12 sec)
-          const minutes = devMode
-            ? sessionConfig.meditationMinutes / 60
-            : sessionConfig.meditationMinutes
-          timerControls.start(minutes)
-          return
-        }
-
-        const audioFile = getAudioForPhase(phase, sessionConfig)
-        if (audioFile) {
-          // In dev mode, set a timeout to skip after devSeconds
-          if (devMode) {
-            devTimeout = window.setTimeout(() => {
-              audioControls.stop()
-              // Stop outro playback when skipping (keep-alive stops via phase effect)
-              if (phase === 'outro_chanting' || phase === 'outro') {
-                stopOutroPlayback()
-              }
-              if (phaseRef.current === phase) {
-                setPhase(getNextPhase(phase, sessionConfig))
-              }
-            }, devSeconds * 1000)
-          }
-
-          // Use source-swap technique for outro phases (works from background!)
-          // This is critical: when meditation timer completes in background,
-          // the source-swap allows audio to play from the already-playing element
-          if (phase === 'outro_chanting' || phase === 'outro') {
-            const fadeInSeconds = phase === 'outro_chanting' ? 5 : undefined
-            startKeepAlive();
-            await playOutro(audioFile, { fadeInSeconds })
-          } else {
-            // Fade in over 30s for intro chanting
-            const playOptions = phase === 'intro' ? { fadeInSeconds: 30 } : undefined
-            await audioControls.play(audioFile, playOptions)
-          }
-        }
-
-        // Check phase hasn't changed during playback
-        if (phaseRef.current === phase) {
-          setPhase(getNextPhase(phase, sessionConfig))
-        }
-      } catch (err) {
-        console.error('Phase execution failed:', err)
-        // Gracefully move to next phase on error
-        if (phaseRef.current === phase) {
-          setPhase(getNextPhase(phase, sessionConfig))
-        }
-      }
-    }
-
-    runPhase()
-
-    return () => {
-      if (devTimeout) {
-        clearTimeout(devTimeout)
-      }
-    }
-  }, [phase, sessionConfig, audioControls, timerControls, playOutro, stopOutroPlayback])
-
-  const isSessionActive = phase !== 'idle' && phase !== 'complete'
+    const steps = resolveSessionSteps(config, metadata)
+    engine.startSession(steps)
+  }
 
   return (
     <div className="app">
@@ -248,7 +68,7 @@ function App() {
         </p>
       </header>
 
-      {phase === 'idle' && (
+      {engine.status === 'idle' && (
         <SessionSetup
           metadata={metadata}
           sessionMode={sessionMode}
@@ -263,23 +83,27 @@ function App() {
           setOutroDuration={setOutroDuration}
           instructionType={instructionType}
           setInstructionType={setInstructionType}
-          onStart={startSession}
+          onStart={handleStart}
         />
       )}
 
-      {isSessionActive && (
+      {engine.status === 'active' && engine.currentStep && (
         <SessionActive
-          phase={phase}
-          meditationTimeRemaining={meditationTimeRemaining}
-          audioProgress={phase === 'outro_chanting' || phase === 'outro' ? outroProgress : audioProgress}
-          audioTimeRemaining={phase === 'outro_chanting' || phase === 'outro' ? outroTimeRemaining : audioTimeRemaining}
-          onSkip={skipPhase}
-          onStop={stopSession}
+          label={engine.currentStep.label}
+          timeRemaining={engine.timeRemaining}
+          progress={engine.progress}
+          showProgressBar={engine.currentStep.type === 'audio'}
+          onSkip={engine.skip}
+          onStop={engine.stopSession}
         />
       )}
 
-      {phase === 'complete' && (
-        <SessionComplete onNewSession={() => setPhase('idle')} />
+      {engine.status === 'complete' && (
+        <SessionComplete onNewSession={engine.stopSession} />
+      )}
+
+      {engine.status === 'error' && (
+        <SessionError message={engine.errorMessage} onDismiss={engine.stopSession} />
       )}
 
       <footer className="app-footer">

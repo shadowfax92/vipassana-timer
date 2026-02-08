@@ -11,7 +11,7 @@
  * 3. Audio plays even from background because the element was already "playing"
  */
 
-import { SILENT_MP3, createSilentAudio } from './media'
+import { SILENT_AUDIO, createSilentAudio } from './media'
 
 export interface AudioProgress {
   current: number
@@ -60,7 +60,7 @@ export class MediaKeepAlive {
       return
     }
 
-    audioElement.src = SILENT_MP3
+    audioElement.src = SILENT_AUDIO
     audioElement.loop = true
     audioElement.volume = 0.01
 
@@ -192,7 +192,7 @@ export class MediaKeepAlive {
       this.primedAudio.ontimeupdate = null
       this.primedAudio.onerror = null
       // Re-prime with silent audio so it's ready for next swap
-      this.primedAudio.src = SILENT_MP3
+      this.primedAudio.src = SILENT_AUDIO
       this.primedAudio.loop = true
       this.primedAudio.volume = 0.01
       this.primedAudio.play().catch(() => {

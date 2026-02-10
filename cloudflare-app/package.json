@@ -7,8 +7,8 @@
     "dev": "wrangler pages dev --port 8787",
     "dev:vite": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "npm run build && wrangler pages deploy dist",
-    "deploy:staging": "npm run build && wrangler pages deploy dist --branch staging",
+    "deploy": "npm run build && wrangler pages deploy dist --commit-dirty=true",
+    "deploy:staging": "npm run build && wrangler pages deploy dist --branch staging --commit-dirty=true",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -228,24 +228,6 @@ export function SessionSetup({
           </section>
 
           <section className="option-group">
-            <h2>Metta</h2>
-            <div className="button-group">
-              <button
-                className={!enableMetta ? "selected" : ""}
-                onClick={() => setEnableMetta(false)}
-              >
-                Skip
-              </button>
-              <button
-                className={enableMetta ? "selected" : ""}
-                onClick={() => setEnableMetta(true)}
-              >
-                Play
-              </button>
-            </div>
-          </section>
-
-          <section className="option-group">
             <h2>Outro Chanting</h2>
             <div className="button-group">
               <button
@@ -264,6 +246,24 @@ export function SessionSetup({
                   {dur === "default" ? "Default" : dur.replace("min", " min")}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="option-group">
+            <h2>Metta</h2>
+            <div className="button-group">
+              <button
+                className={!enableMetta ? "selected" : ""}
+                onClick={() => setEnableMetta(false)}
+              >
+                Skip
+              </button>
+              <button
+                className={enableMetta ? "selected" : ""}
+                onClick={() => setEnableMetta(true)}
+              >
+                Play
+              </button>
             </div>
           </section>
         </>

@@ -20,7 +20,7 @@ const PHASE_REGISTRY: Record<string, PhaseDefinition> = {
   guided: guidedPhase,
 }
 
-const CUSTOM_FLOW = ['gong', 'intro', 'instructions', 'meditation', 'metta', 'outro_chanting', 'outro'] as const
+const CUSTOM_FLOW = ['gong', 'intro', 'instructions', 'meditation', 'outro_chanting', 'metta', 'outro'] as const
 const GUIDED_FLOW = ['gong', 'guided'] as const
 
 export function resolveSessionSteps(config: SessionConfig, metadata: Metadata): SessionStep[] {

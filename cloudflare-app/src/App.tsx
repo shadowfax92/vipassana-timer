@@ -21,12 +21,12 @@ function App() {
   const [metadata, setMetadata] = useState<Metadata | null>(null)
 
   const [sessionMode, setSessionMode] = useState<SessionMode>('custom')
-  const [enableGong, setEnableGong] = useState(false)
-  const [enableInstructions, setEnableInstructions] = useState(false)
+  const [enableGong, setEnableGong] = useState(true)
+  const [enableInstructions, setEnableInstructions] = useState(true)
   const [enableMetta, setEnableMetta] = useState(false)
-  const [introDuration, setIntroDuration] = useState<ChantingDuration>('5min')
-  const [meditationDuration, setMeditationDuration] = useState<MeditationDuration>(30)
-  const [outroDuration, setOutroDuration] = useState<ChantingDuration>('5min')
+  const [introDuration, setIntroDuration] = useState<ChantingDuration>('default')
+  const [meditationDuration, setMeditationDuration] = useState<MeditationDuration>(60)
+  const [outroDuration, setOutroDuration] = useState<ChantingDuration>('default')
   const [instructionType, setInstructionType] = useState<InstructionType>('short')
 
   const engine = useSessionEngine()

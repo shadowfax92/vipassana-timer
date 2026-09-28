@@ -1,8 +1,9 @@
-/* Paper V5 tokens live in index.css. Layout grows with content on short screens,
-   so keyboard/zoom never clips the duration controls or Start action. */
+/* Keep the Paper palette while allowing the form to use the available space.
+   Layout breakpoints only change presentation: one DOM tree owns the controls,
+   drafts and focus order across phone, tablet and desktop. */
 .app {
   width: 100%;
-  max-width: 402px;
+  max-width: 640px;
   min-height: 100dvh;
   margin: 0 auto;
   padding: 24px;
@@ -28,7 +29,9 @@
   color: var(--muted); flex-shrink: 0; border-radius: 6px;
 }
 .theme-toggle { position: absolute; right: 0; top: 0; }
-.setup { flex: 1; display: flex; flex-direction: column; }
+.setup { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.setup-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.setup-controls { min-width: 0; }
 .mode-tabs { display: flex; height: 48px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
 .mode-tabs button {
   width: 50%; height: 48px; border: 0; border-bottom: 2px solid transparent;
@@ -83,15 +86,18 @@ select option { background: var(--surface); color: var(--text); }
 .secondary-button { background: transparent; color: var(--text); border-color: var(--border); font-weight: 400; }
 .validation-message { margin-top: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; line-height: 22px; }
 /* Native modal provides focus trapping and an inert background. A sheet and a
-   centered reminder share the same accessible behavior, not separate stacks. */
+   centered reminder share the same accessible behavior. CSS moves sheets into
+   the centre on larger screens without remounting a dialog or losing its draft. */
 .dialog {
   color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  position: fixed; inset: 0;
   padding: 24px; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain;
 }
 .dialog[open] { display: flex; flex-direction: column; gap: 16px; }
+.dialog > * { flex-shrink: 0; }
 .dialog::backdrop { background: #00000099; }
-.dialog--sheet { width: min(402px, 100%); max-width: 100%; margin: auto auto 0; border-radius: 20px 20px 0 0; border-bottom: 0; }
-.dialog--modal { width: min(354px, calc(100% - 32px)); max-width: 100%; border-radius: 16px; }
+.dialog--sheet { width: min(640px, 100%); max-width: 100%; margin: auto auto 0; border-radius: 20px 20px 0 0; border-bottom: 0; }
+.dialog--modal { margin: auto; width: min(354px, calc(100% - 32px)); max-width: 100%; border-radius: 16px; }
 .dialog-heading { display: flex; align-items: center; justify-content: space-between; min-height: 44px; gap: 4px; }
 .dialog h2 { font-size: 26px; line-height: 34px; letter-spacing: -.025em; font-weight: 400; }
 .dialog--modal h2 { font-size: 24px; line-height: 30px; }
@@ -120,7 +126,89 @@ select option { background: var(--surface); color: var(--text); }
 .complete { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 32px; text-align: center; }
 .complete h2 { font-weight: 400; font-size: 26px; line-height: 34px; margin-bottom: 12px; }
 .complete p { color: var(--muted); font-size: 16px; line-height: 24px; }
-@media (min-width: 600px) { .app { min-height: min(874px, 100dvh); } }
+/* Tablet and desktop use content height. Stretching a short form to a phone
+   artboard's height leaves its primary action detached from the settings. */
+@media (min-width: 640px) {
+  .app {
+    max-width: 760px;
+    min-height: auto;
+    padding: clamp(32px, 5vh, 64px) 32px;
+  }
+  .masthead {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 44px;
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    row-gap: 2px;
+    height: auto;
+    padding: 0 0 32px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .masthead img { grid-column: 1; grid-row: 1 / 3; }
+  .masthead h1 { grid-column: 2; grid-row: 1; font-size: clamp(30px, 3vw, 36px); line-height: 1.2; }
+  .masthead p { grid-column: 2; grid-row: 2; font-size: 14px; line-height: 22px; }
+  .theme-toggle { position: static; grid-column: 3; grid-row: 1 / 3; }
+  .mode-tabs { width: min(100%, 320px); margin-bottom: 28px; }
+  .setup-content { gap: 32px; }
+  .duration-section { gap: 12px; padding: 0 0 8px; }
+  .duration-section h2 { font-size: 20px; line-height: 28px; }
+  .duration-presets { gap: 12px; }
+  .duration-presets button { height: 56px; font-size: 16px; }
+  .duration-help { font-size: 14px; line-height: 22px; }
+  .setting-row { padding: 24px 0; gap: 8px; }
+  .setup-footer { margin-top: 0; padding-top: 0; }
+  .finish-preview time { font-size: 28px; line-height: 36px; }
+  .details-button { margin-block: 8px; }
+  .guided-options { gap: 20px; }
+  .dialog {
+    padding: 32px;
+    max-height: calc(100dvh - 48px);
+  }
+  .dialog--sheet {
+    width: min(480px, calc(100% - 48px));
+    margin: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .dialog--modal { width: min(440px, calc(100% - 48px)); }
+  .dialog--modal h2 { font-size: 26px; line-height: 34px; }
+  .session { min-height: min(580px, calc(100dvh - 220px)); }
+  .session-center { padding-block: clamp(24px, 6vh, 64px); }
+  .time-display { font-size: clamp(82px, 9vw, 112px); line-height: 1.2; }
+  .session-footer { width: min(100%, 360px); margin-inline: auto; }
+  .audio-progress { max-width: 440px; }
+  .complete { width: min(100%, 480px); min-height: min(480px, calc(100dvh - 220px)); margin-inline: auto; padding-block: 32px; }
+}
+
+@media (min-width: 1024px) {
+  .app { max-width: 1080px; padding-inline: 48px; }
+  .masthead { margin-bottom: 32px; }
+  .setup-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 352px;
+    gap: clamp(32px, 4vw, 64px);
+    align-items: start;
+  }
+  /* The summary is a distinct surface on wide screens so the finish time and
+     Start stay together beside the settings, instead of stretching below them. */
+  .setup-footer {
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+  }
+  .finish-preview { gap: 8px; }
+  .finish-preview > div { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .finish-preview time { font-size: 40px; line-height: 48px; text-align: left; }
+  .details-button { justify-content: flex-start; margin-block: 20px 12px; }
+}
+
+/* Scroll the dialog on a short viewport rather than compressing its controls.
+   This also covers landscape phones and a reduced viewport above the keyboard. */
+@media (max-height: 540px) {
+  .dialog { padding-block: 16px; max-height: calc(100dvh - 24px); }
+}
 @media (max-width: 350px) {
   .app { padding: 20px 16px; }
   .masthead h1 { font-size: 28px; }

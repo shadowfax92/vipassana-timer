@@ -94,55 +94,59 @@ export function SessionSetup(props: SetupProps) {
       <button aria-pressed={isCustom} onClick={() => onChange({ mode: 'custom' })}>Custom</button>
       <button aria-pressed={!isCustom} onClick={() => onChange({ mode: 'guided' })}>Guided</button>
     </nav>
-    {isCustom ? <>
-      <section className="duration-section" aria-labelledby="duration-label">
-        <h2 id="duration-label">Meditation duration</h2>
-        <div className="duration-presets">
-          {[30, 60].map(minutes => <button key={minutes} aria-pressed={settings.totalMinutes === minutes} onClick={() => onChange({ totalMinutes: minutes })}>{minutes} min</button>)}
-          <button aria-pressed={customDuration} onClick={event => { event.currentTarget.focus(); setPanel('duration') }}>{customDuration ? settings.totalMinutes + ' min' : 'Custom'}</button>
-        </div>
-        <p className="duration-help">Includes all selected audio and gongs</p>
-      </section>
-      <section className="setting-row">
-        <div className="setting-line">
-          <label htmlFor="instructions">Instructions</label>
-          <div className="plain-select select-wrap">
-            <select id="instructions" value={settings.enableInstructions ? 'play' : 'skip'} onChange={event => onChange({ enableInstructions: event.target.value === 'play' })}>
-              <option value="skip">Skip</option><option value="play">Play</option>
-            </select><Icon name="down" size={16} />
-          </div>
-        </div>
-        <p className="supporting">{settings.enableInstructions ? 'Guidance before silent practice' : 'Silent practice without instructions'}</p>
-      </section>
-      <button className="setting-row audio-summary" onClick={event => { event.currentTarget.focus(); setPanel('audio') }} aria-haspopup="dialog">
-        <span className="setting-line"><span>Audio & gongs</span><span className="trailing-action">Customize <Icon name="down" size={16} /></span></span>
-        <span className="supporting">{audioSummary(settings)}<br />Mettā {settings.enableMetta ? 'on' : 'off'}</span>
-      </button>
-    </> : <>
-      <section className="duration-section guided-options" aria-labelledby="guided-label">
-        <h2 id="guided-label">Guided Vipassana</h2>
-        <p className="supporting">A complete sitting with S. N. Goenka.</p>
-        <div className="guided-instructions"><label htmlFor="guided-instructions">Instructions</label>
-          <div className="select-wrap">
-            <select id="guided-instructions" value={settings.instructionType} onChange={event => onChange({ instructionType: event.target.value === 'long' ? 'long' : 'short' })}>
-              <option value="short">Short instructions</option><option value="long">Long instructions</option>
-            </select><Icon name="down" size={16} />
-          </div>
-        </div>
-        <PlaySelect label="Opening gong" enabled={settings.enableGong} onChange={enableGong => onChange({ enableGong })} />
-        <p className="supporting">The full recording plays without a time limit.</p>
-      </section>
-    </>}
-    {!result.ok && <p role="alert" className="validation-message">{result.message}</p>}
-    <div className="setup-footer">
-      <div className="finish-preview">
-        <div><span>Estimated finish</span><time>{plan ? formatFinish(now + plan.totalSeconds * 1000, now) : '—'}</time></div>
-        <p>If you start now · {formatClock(now)}</p>
+    <div className="setup-content">
+      <div className="setup-controls">
+        {isCustom ? <>
+          <section className="duration-section" aria-labelledby="duration-label">
+            <h2 id="duration-label">Meditation duration</h2>
+            <div className="duration-presets">
+              {[30, 60].map(minutes => <button key={minutes} aria-pressed={settings.totalMinutes === minutes} onClick={() => onChange({ totalMinutes: minutes })}>{minutes} min</button>)}
+              <button aria-pressed={customDuration} onClick={event => { event.currentTarget.focus(); setPanel('duration') }}>{customDuration ? settings.totalMinutes + ' min' : 'Custom'}</button>
+            </div>
+            <p className="duration-help">Includes all selected audio and gongs</p>
+          </section>
+          <section className="setting-row">
+            <div className="setting-line">
+              <label htmlFor="instructions">Instructions</label>
+              <div className="plain-select select-wrap">
+                <select id="instructions" value={settings.enableInstructions ? 'play' : 'skip'} onChange={event => onChange({ enableInstructions: event.target.value === 'play' })}>
+                  <option value="skip">Skip</option><option value="play">Play</option>
+                </select><Icon name="down" size={16} />
+              </div>
+            </div>
+            <p className="supporting">{settings.enableInstructions ? 'Guidance before silent practice' : 'Silent practice without instructions'}</p>
+          </section>
+          <button className="setting-row audio-summary" onClick={event => { event.currentTarget.focus(); setPanel('audio') }} aria-haspopup="dialog">
+            <span className="setting-line"><span>Audio & gongs</span><span className="trailing-action">Customize <Icon name="down" size={16} /></span></span>
+            <span className="supporting">{audioSummary(settings)}<br />Mettā {settings.enableMetta ? 'on' : 'off'}</span>
+          </button>
+        </> : <>
+          <section className="duration-section guided-options" aria-labelledby="guided-label">
+            <h2 id="guided-label">Guided Vipassana</h2>
+            <p className="supporting">A complete sitting with S. N. Goenka.</p>
+            <div className="guided-instructions"><label htmlFor="guided-instructions">Instructions</label>
+              <div className="select-wrap">
+                <select id="guided-instructions" value={settings.instructionType} onChange={event => onChange({ instructionType: event.target.value === 'long' ? 'long' : 'short' })}>
+                  <option value="short">Short instructions</option><option value="long">Long instructions</option>
+                </select><Icon name="down" size={16} />
+              </div>
+            </div>
+            <PlaySelect label="Opening gong" enabled={settings.enableGong} onChange={enableGong => onChange({ enableGong })} />
+            <p className="supporting">The full recording plays without a time limit.</p>
+          </section>
+        </>}
+        {!result.ok && <p role="alert" className="validation-message">{result.message}</p>}
       </div>
-      <button className="details-button" disabled={!plan} onClick={event => { event.currentTarget.focus(); setPanel('details') }}>View session details <Icon name="info" size={17} /></button>
-      <button className="primary-button start-button" disabled={!plan} onClick={event => { event.currentTarget.focus(); if (plan) onStart(plan) }}>
-        <span>Start session</span><span>{plan ? formatDuration(plan.totalSeconds) : settings.totalMinutes + ' min'}</span>
-      </button>
+      <div className="setup-footer">
+        <div className="finish-preview">
+          <div><span>Estimated finish</span><time>{plan ? formatFinish(now + plan.totalSeconds * 1000, now) : '—'}</time></div>
+          <p>If you start now · {formatClock(now)}</p>
+        </div>
+        <button className="details-button" disabled={!plan} onClick={event => { event.currentTarget.focus(); setPanel('details') }}>View session details <Icon name="info" size={17} /></button>
+        <button className="primary-button start-button" disabled={!plan} onClick={event => { event.currentTarget.focus(); if (plan) onStart(plan) }}>
+          <span>Start session</span><span>{plan ? formatDuration(plan.totalSeconds) : settings.totalMinutes + ' min'}</span>
+        </button>
+      </div>
     </div>
     {panel === 'audio' && <AudioSettings {...props} onClose={() => setPanel(null)} />}
     {panel === 'duration' && <DurationPicker {...props} onClose={() => setPanel(null)} />}

@@ -37,6 +37,9 @@ button { color: inherit; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 button, select, input { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+/* Touch/mouse focus restoration should not leave a ring on buttons. Keyboard
+   input restores the rule above; text-entry controls keep their focus cue. */
+:root[data-focus-input="pointer"] button:focus { outline: none; }
 button, select, input { min-height: 44px; }
 button { touch-action: manipulation; }
 h1, h2, p { margin: 0; }

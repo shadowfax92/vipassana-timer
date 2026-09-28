@@ -6,7 +6,6 @@ import type {
   InstructionType,
   Metadata,
 } from "../types";
-import { hasChantingsAvailable } from "../utils/chanting";
 
 interface SessionSetupProps {
   metadata: Metadata | null;
@@ -29,7 +28,6 @@ interface SessionSetupProps {
   onStart: () => void;
 }
 
-const CHANTING_DURATIONS: ChantingDuration[] = ["default", "2min", "5min"];
 const PRESET_DURATIONS = [30, 60] as const;
 const MIN_DURATION = 1;
 const MAX_DURATION = 180;
@@ -152,16 +150,12 @@ export function SessionSetup({
               >
                 Skip
               </button>
-              {CHANTING_DURATIONS.map((dur) => (
-                <button
-                  key={dur}
-                  className={introDuration === dur ? "selected" : ""}
-                  onClick={() => setIntroDuration(dur)}
-                  disabled={!hasChantingsAvailable(metadata, dur)}
-                >
-                  {dur === "default" ? "Default" : dur.replace("min", " min")}
-                </button>
-              ))}
+              <button
+                className={introDuration === "default" ? "selected" : ""}
+                onClick={() => setIntroDuration("default")}
+              >
+                Play
+              </button>
             </div>
           </section>
 
@@ -236,16 +230,12 @@ export function SessionSetup({
               >
                 Skip
               </button>
-              {CHANTING_DURATIONS.map((dur) => (
-                <button
-                  key={dur}
-                  className={outroDuration === dur ? "selected" : ""}
-                  onClick={() => setOutroDuration(dur)}
-                  disabled={!hasChantingsAvailable(metadata, dur)}
-                >
-                  {dur === "default" ? "Default" : dur.replace("min", " min")}
-                </button>
-              ))}
+              <button
+                className={outroDuration === "default" ? "selected" : ""}
+                onClick={() => setOutroDuration("default")}
+              >
+                Play
+              </button>
             </div>
           </section>
 

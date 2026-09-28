@@ -88,7 +88,7 @@ export function SessionSetup(props: SetupProps) {
   const plan = result.ok ? result.plan : null
   const displayedDurations = plan ? roundDurations(plan.steps.map(step => step.durationSeconds)) : []
   const isCustom = settings.mode === 'custom'
-  const customDuration = settings.totalMinutes !== 45 && settings.totalMinutes !== 60
+  const customDuration = settings.totalMinutes !== 30 && settings.totalMinutes !== 60
   return <main className="setup">
     <nav className="mode-tabs" aria-label="Session format">
       <button aria-pressed={isCustom} onClick={() => onChange({ mode: 'custom' })}>Custom</button>
@@ -98,7 +98,7 @@ export function SessionSetup(props: SetupProps) {
       <section className="duration-section" aria-labelledby="duration-label">
         <h2 id="duration-label">Meditation duration</h2>
         <div className="duration-presets">
-          {[45, 60].map(minutes => <button key={minutes} aria-pressed={settings.totalMinutes === minutes} onClick={() => onChange({ totalMinutes: minutes })}>{minutes} min</button>)}
+          {[30, 60].map(minutes => <button key={minutes} aria-pressed={settings.totalMinutes === minutes} onClick={() => onChange({ totalMinutes: minutes })}>{minutes} min</button>)}
           <button aria-pressed={customDuration} onClick={event => { event.currentTarget.focus(); setPanel('duration') }}>{customDuration ? settings.totalMinutes + ' min' : 'Custom'}</button>
         </div>
         <p className="duration-help">Includes all selected audio and gongs</p>

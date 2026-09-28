@@ -1,19 +1,6 @@
-interface SessionErrorProps {
-  message: string | null
-  onDismiss: () => void
-}
-
-export function SessionError({ message, onDismiss }: SessionErrorProps) {
-  return (
-    <div className="complete">
-      <div className="complete-message">
-        <span className="complete-icon">⚠️</span>
-        <h2>Session Error</h2>
-        <p>{message || 'Something went wrong during your session.'}</p>
-      </div>
-      <button className="start-button" onClick={onDismiss}>
-        Try Again
-      </button>
-    </div>
-  )
+export function SessionError({ message, onDismiss }: { message: string | null; onDismiss: () => void }) {
+  return <main className="complete">
+    <div role="alert"><h2>Session interrupted</h2><p>{message || 'Unable to play this session. Please try again.'}</p></div>
+    <button className="primary-button" onClick={onDismiss}>Back to setup</button>
+  </main>
 }

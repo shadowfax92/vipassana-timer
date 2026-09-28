@@ -1,126 +1,58 @@
-import { useState, useEffect } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import './App.css'
-
-import type {
-  Metadata,
-  SessionMode,
-  ChantingDuration,
-  MeditationDuration,
-  InstructionType,
-} from './types'
-
+import type { SessionPlan } from './lib/sessionPlan'
+import { usePreferences } from './hooks/usePreferences'
 import { useSessionEngine } from './hooks/useSessionEngine'
-import { resolveSessionSteps } from './phases/registry'
-
+import { Icon } from './components/Icon'
 import { SessionSetup } from './components/SessionSetup'
 import { SessionActive } from './components/SessionActive'
 import { SessionComplete } from './components/SessionComplete'
 import { SessionError } from './components/SessionError'
+import { StartReminder } from './components/StartReminder'
 
 function App() {
-  const [metadata, setMetadata] = useState<Metadata | null>(null)
-
-  const [sessionMode, setSessionMode] = useState<SessionMode>('custom')
-  const [enableGong, setEnableGong] = useState(true)
-  const [enableInstructions, setEnableInstructions] = useState(true)
-  const [enableMetta, setEnableMetta] = useState(false)
-  const [introDuration, setIntroDuration] = useState<ChantingDuration>('default')
-  const [meditationDuration, setMeditationDuration] = useState<MeditationDuration>(60)
-  const [outroDuration, setOutroDuration] = useState<ChantingDuration>('default')
-  const [instructionType, setInstructionType] = useState<InstructionType>('short')
-
+  const { preferences, updatePreferences } = usePreferences()
   const engine = useSessionEngine()
-
-  useEffect(() => {
-    fetch('/audio/metadata.json')
-      .then(res => res.json())
-      .then(setMetadata)
-      .catch(err => console.error('Failed to load metadata:', err))
-  }, [])
-
-  const handleStart = () => {
-    if (!metadata) return
-    const config = {
-      mode: sessionMode,
-      enableGong,
-      enableInstructions,
-      enableMetta,
-      introDuration,
-      outroDuration,
-      meditationMinutes: meditationDuration,
-      instructionType,
-    }
-    const steps = resolveSessionSteps(config, metadata)
-    engine.startSession(steps)
+  const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null)
+  const [preparing, setPreparing] = useState(false)
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = preferences.theme
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', preferences.theme === 'dark' ? '#1B1E20' : '#F1F2F2')
+  }, [preferences.theme])
+  const begin = async (plan: SessionPlan) => {
+    // The engine owns audio, wake locks and timing. This local state only guards
+    // the Start UI during its existing asynchronous preparation.
+    setPreparing(true)
+    try { await engine.startSession(plan.steps) }
+    finally { setPreparing(false) }
   }
-
-  return (
-    <div className="app">
-      <header>
-        <h1>Daily Vipassana</h1>
-        <p className="subtitle">
-          Meditation with S.N. Goenka's chantings
-          <span className="separator">·</span>
-          <a
-            className="source-link"
-            href="https://github.com/shadowfax92/vipassana-daily-meditation-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Source
-          </a>
-        </p>
-      </header>
-
-      {engine.status === 'idle' && (
-        <SessionSetup
-          metadata={metadata}
-          sessionMode={sessionMode}
-          setSessionMode={setSessionMode}
-          enableGong={enableGong}
-          setEnableGong={setEnableGong}
-          enableInstructions={enableInstructions}
-          setEnableInstructions={setEnableInstructions}
-          enableMetta={enableMetta}
-          setEnableMetta={setEnableMetta}
-          introDuration={introDuration}
-          setIntroDuration={setIntroDuration}
-          meditationDuration={meditationDuration}
-          setMeditationDuration={setMeditationDuration}
-          outroDuration={outroDuration}
-          setOutroDuration={setOutroDuration}
-          instructionType={instructionType}
-          setInstructionType={setInstructionType}
-          onStart={handleStart}
-        />
-      )}
-
-      {engine.status === 'active' && engine.currentStep && (
-        <SessionActive
-          label={engine.currentStep.label}
-          timeRemaining={engine.timeRemaining}
-          progress={engine.progress}
-          showProgressBar={engine.currentStep.type === 'audio'}
-          onSkip={engine.skip}
-          onStop={engine.stopSession}
-        />
-      )}
-
-      {engine.status === 'complete' && (
-        <SessionComplete onNewSession={engine.stopSession} />
-      )}
-
-      {engine.status === 'error' && (
-        <SessionError message={engine.errorMessage} onDismiss={engine.stopSession} />
-      )}
-
-      <footer className="app-footer">
-        <a href="https://daily-vipassana.app" target="_blank" rel="noopener noreferrer">
-          daily-vipassana.app
-        </a>
-      </footer>
-    </div>
-  )
+  const start = (plan: SessionPlan) => {
+    if (preferences.hideStartReminder) void begin(plan)
+    else setPendingPlan(plan)
+  }
+  return <div className="app">
+    <header className="masthead">
+      <img src="/buddha-study.png" width="42" height="48" alt="" />
+      <h1>Daily Vipassana</h1>
+      <p>In the tradition of S. N. Goenka</p>
+      <button className="icon-button theme-toggle" aria-label={preferences.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        onClick={() => updatePreferences({ theme: preferences.theme === 'dark' ? 'light' : 'dark' })}>
+        <Icon name={preferences.theme === 'dark' ? 'sun' : 'moon'} size={22} />
+      </button>
+    </header>
+    {engine.status === 'idle' && !preparing && <SessionSetup preferences={preferences} onChange={updatePreferences} onStart={start} />}
+    {engine.status === 'idle' && preparing && <main className="session"><div className="session-center"><p role="status">Preparing audio…</p></div></main>}
+    {engine.status === 'active' && <SessionActive label={engine.currentStep?.label ?? ''} timeRemaining={engine.timeRemaining}
+      progress={engine.progress} showProgressBar={engine.currentStep?.type === 'audio'} onSkip={engine.skip} onStop={engine.stopSession} />}
+    {engine.status === 'complete' && <SessionComplete onNewSession={engine.stopSession} />}
+    {engine.status === 'error' && <SessionError message={engine.errorMessage} onDismiss={engine.stopSession} />}
+    {pendingPlan && <StartReminder onClose={() => setPendingPlan(null)} onConfirm={hide => {
+      // Only confirmation starts playback. Dismissing the popup neither consumes
+      // sitting time nor saves the checkbox's unconfirmed draft value.
+      updatePreferences({ hideStartReminder: hide })
+      setPendingPlan(null)
+      void begin(pendingPlan)
+    }} />}
+  </div>
 }
-
 export default App

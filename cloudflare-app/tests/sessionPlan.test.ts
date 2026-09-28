@@ -1,0 +1,52 @@
+import { describe, expect, it } from 'vitest'
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { audioCatalog } from '../src/audioCatalog'
+import { defaultPreferences } from '../src/lib/preferences'
+import { buildSessionPlan, sumDuration } from '../src/lib/sessionPlan'
+
+describe('setup duration accounting', () => {
+  it('keeps every audio selection inside 45 and 60 minutes', () => {
+    // Exercise every selection, not just the default sitting.
+    for (const totalMinutes of [45, 60]) for (let mask = 0; mask < 32; mask++) {
+      const result = buildSessionPlan({ ...defaultPreferences(), totalMinutes,
+        enableGong: Boolean(mask & 1), enableInstructions: Boolean(mask & 2),
+        enableMetta: Boolean(mask & 4), introDuration: mask & 8 ? 'default' : 'none',
+        outroDuration: mask & 16 ? 'default' : 'none' })
+      expect(result.ok).toBe(true)
+      if (!result.ok) throw new Error(result.message)
+      expect(sumDuration(result.plan.steps)).toBeCloseTo(totalMinutes * 60)
+      expect(result.plan.steps.at(-1)?.audioSrc).toBe('/audio/outro.mp3')
+      expect(result.plan.steps.find(step => step.type === 'timer')?.durationSeconds).toBeGreaterThan(60)
+    }
+  })
+  it('preserves the existing phase order, recordings and fade settings', () => {
+    const result = buildSessionPlan({ ...defaultPreferences(), enableMetta: true })
+    if (!result.ok) throw new Error(result.message)
+    expect(result.plan.steps.map(step => step.id)).toEqual(['gong', 'intro', 'instructions', 'meditation', 'outro_chanting', 'metta', 'outro'])
+    expect(result.plan.steps.find(step => step.id === 'intro')?.fadeInSeconds).toBe(15)
+    expect(result.plan.steps.find(step => step.id === 'outro_chanting')?.fadeInSeconds).toBe(15)
+  })
+  it.each([0, 1, 11, 45.5, 181, NaN])('rejects an invalid or overcrowded duration: %s', totalMinutes => {
+    expect(buildSessionPlan({ ...defaultPreferences(), totalMinutes }).ok).toBe(false)
+  })
+  it('accepts short sittings once there is room for closing and silent practice', () => {
+    const settings = { ...defaultPreferences(), totalMinutes: 3, enableGong: false, enableInstructions: false,
+      introDuration: 'none' as const, outroDuration: 'none' as const }
+    expect(buildSessionPlan(settings).ok).toBe(true)
+    expect(buildSessionPlan({ ...settings, totalMinutes: 2 }).ok).toBe(false)
+  })
+  it.each(['short', 'long'] as const)('keeps the complete guided %s recording', instructionType => {
+    const result = buildSessionPlan({ ...defaultPreferences(), mode: 'guided', instructionType, totalMinutes: 1 })
+    if (!result.ok) throw new Error(result.message)
+    expect(result.plan.steps.map(step => step.id)).toEqual(['gong', 'guided'])
+    const audio = instructionType === 'short' ? audioCatalog.guidedShort : audioCatalog.guidedLong
+    expect(result.plan.totalSeconds).toBeCloseTo(audio.durationSeconds + audioCatalog.gong.durationSeconds)
+  })
+  it('measures the exact shipped recordings', () => {
+    for (const audio of Object.values(audioCatalog)) {
+      const file = readFileSync(new URL('../public' + audio.audioSrc, import.meta.url))
+      expect(createHash('sha256').update(file).digest('hex')).toBe(audio.sha256)
+    }
+  })
+})

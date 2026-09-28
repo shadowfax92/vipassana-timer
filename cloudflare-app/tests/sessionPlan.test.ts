@@ -7,9 +7,9 @@ import { buildSessionPlan, sumDuration } from '../src/lib/sessionPlan'
 import { roundDurations } from '../src/lib/time'
 
 describe('setup duration accounting', () => {
-  it('keeps every audio selection inside 45 and 60 minutes', () => {
+  it('keeps every audio selection inside 30 and 60 minutes', () => {
     // Exercise every selection, not just the default sitting.
-    for (const totalMinutes of [45, 60]) for (let mask = 0; mask < 32; mask++) {
+    for (const totalMinutes of [30, 60]) for (let mask = 0; mask < 32; mask++) {
       const result = buildSessionPlan({ ...defaultPreferences(), totalMinutes,
         enableGong: Boolean(mask & 1), enableInstructions: Boolean(mask & 2),
         enableMetta: Boolean(mask & 4), introDuration: mask & 8 ? 'default' : 'none',

@@ -8,14 +8,14 @@ A simple web app to recreate the Vipassana meditation experience at home — wit
 
 After attending a 10-day Vipassana course, I wanted a way to maintain the same feeling of meditating at a center — the opening chants to settle in, the silent meditation, and the closing chants. This app recreates that flow.
 
-All chantings are sourced from [Dhamma.org's public recordings](https://discourses.dhamma.org/recordings/chantings). I've chunked them into 2, 5, and 10-minute segments so you can choose how much chanting you want.
+All chantings are sourced from [Dhamma.org's public recordings](https://discourses.dhamma.org/recordings/chantings). Intro and outro chanting each have Skip / Play controls using a default recording. The old 2-, 5-, and 10-minute clips are retained in `cloudflare-app/archive/chanting/` and are not deployed.
 
 ## How it works
 
 1. **Optional Gong** — Start with a gong to signal the beginning
-2. **Intro Chanting** (optional, 2/5/10 min) — Opening chants from the morning sessions (Namo Tassa, taking refuge, etc.)
+2. **Intro Chanting** (Skip / Play) — Default opening chanting recording
 3. **Meditation Timer** (30/60/90/120 min) — Silent meditation countdown
-4. **Outro Chanting** (optional, 2/5/10 min) — More chanting before the closing
+4. **Outro Chanting** (Skip / Play) — Default chanting recording before the closing
 5. **Fixed Closing** — Traditional closing (Bhavatu Sabba Mangalam)
 
 **Skip any section you want.** Every phase has a skip button if you need to move on.
@@ -37,6 +37,9 @@ The frontend. A simple React app that:
 - Handles the session flow with skip buttons for each phase
 
 Deploy: `npm run build && npx wrangler pages deploy dist`
+
+Vite copies `cloudflare-app/public/` into `dist`. Archived clips live outside
+`public`, so the next build and deployment exclude them while preserving them in Git.
 
 ### chunking-app/
 

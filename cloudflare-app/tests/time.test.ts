@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { formatClock, formatCountdown, formatFinish } from '../src/lib/time'
+import { formatClock, formatCountdown, formatFinish, roundDurations } from '../src/lib/time'
 
 it('formats fractional and negative progress safely', () => {
   expect(formatCountdown(92.835)).toBe('01:33')
@@ -11,4 +11,8 @@ it('marks a finish on the next local day, including month boundaries', () => {
   const finish = now + 60 * 60 * 1000
   expect(formatFinish(finish, now)).toBe('Tomorrow, ' + formatClock(finish))
   expect(formatFinish(now + 10 * 60 * 1000, now)).toBe(formatClock(now + 10 * 60 * 1000))
+})
+
+it('keeps rounded duration parts equal to the displayed total', () => {
+  expect(roundDurations([1.1, 1.1, 1.8])).toEqual([2, 1, 1])
 })

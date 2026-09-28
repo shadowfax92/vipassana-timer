@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { audioCatalog } from '../src/audioCatalog'
 import { defaultPreferences } from '../src/lib/preferences'
 import { buildSessionPlan, sumDuration } from '../src/lib/sessionPlan'
+import { roundDurations } from '../src/lib/time'
 
 describe('setup duration accounting', () => {
   it('keeps every audio selection inside 45 and 60 minutes', () => {
@@ -16,6 +17,7 @@ describe('setup duration accounting', () => {
       expect(result.ok).toBe(true)
       if (!result.ok) throw new Error(result.message)
       expect(sumDuration(result.plan.steps)).toBeCloseTo(totalMinutes * 60)
+      expect(roundDurations(result.plan.steps.map(step => step.durationSeconds)).reduce((sum, seconds) => sum + seconds, 0)).toBe(totalMinutes * 60)
       expect(result.plan.steps.at(-1)?.audioSrc).toBe('/audio/outro.mp3')
       expect(result.plan.steps.find(step => step.type === 'timer')?.durationSeconds).toBeGreaterThan(60)
     }

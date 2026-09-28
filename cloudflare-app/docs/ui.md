@@ -1,6 +1,6 @@
 # Practice UI
 
-The setup follows [Paper V5](https://app.paper.design/file/01M3JQHDG1JNYNF57JA5MYQ3K4/p-4-1). The small Buddha image is the approved prototype asset; outline icons use the same Tabler paths.
+The setup follows [Paper V5](https://app.paper.design/file/01M3JQHDG1JNYNF57JA5MYQ3K4/p-4-1). The small Buddha image is a transparent 42×48 export of the approved Paper node (3.6 KB); outline icons use the same Tabler paths.
 
 ## Boundaries
 

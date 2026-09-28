@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import type { Preferences } from '../lib/preferences'
 import type { SessionPlan } from '../lib/sessionPlan'
 import { buildSessionPlan, MAX_MINUTES, MIN_MINUTES } from '../lib/sessionPlan'
-import { formatClock, formatCountdown, formatDuration, formatFinish } from '../lib/time'
+import { formatClock, formatCountdown, formatDuration, formatFinish, roundDurations } from '../lib/time'
 import { Dialog } from './Dialog'
 import { Icon } from './Icon'
 
@@ -86,6 +86,7 @@ export function SessionSetup(props: SetupProps) {
   }, [])
   const result = buildSessionPlan(settings)
   const plan = result.ok ? result.plan : null
+  const displayedDurations = plan ? roundDurations(plan.steps.map(step => step.durationSeconds)) : []
   const isCustom = settings.mode === 'custom'
   const customDuration = settings.totalMinutes !== 45 && settings.totalMinutes !== 60
   return <main className="setup">
@@ -135,7 +136,7 @@ export function SessionSetup(props: SetupProps) {
     {!result.ok && <p role="alert" className="validation-message">{result.message}</p>}
     <div className="setup-footer">
       <div className="finish-preview">
-        <div><span>{isCustom ? 'Finish at' : 'Estimated finish'}</span><time>{plan ? formatFinish(now + plan.totalSeconds * 1000, now) : '—'}</time></div>
+        <div><span>Estimated finish</span><time>{plan ? formatFinish(now + plan.totalSeconds * 1000, now) : '—'}</time></div>
         <p>If you start now · {formatClock(now)}</p>
       </div>
       <button className="details-button" disabled={!plan} onClick={event => { event.currentTarget.focus(); setPanel('details') }}>View session details <Icon name="info" size={17} /></button>
@@ -146,7 +147,7 @@ export function SessionSetup(props: SetupProps) {
     {panel === 'audio' && <AudioSettings {...props} onClose={() => setPanel(null)} />}
     {panel === 'duration' && <DurationPicker {...props} onClose={() => setPanel(null)} />}
     {panel === 'details' && plan && <Dialog title={isCustom ? 'Your ' + settings.totalMinutes + ' minutes' : 'Your guided sitting'} onClose={() => setPanel(null)}>
-      <dl className="session-details">{plan.steps.map(step => <div key={step.id}><dt>{step.type === 'timer' ? 'Silent practice' : step.label}</dt><dd>{formatCountdown(step.durationSeconds)}</dd></div>)}</dl>
+      <dl className="session-details">{plan.steps.map((step, index) => <div key={step.id}><dt>{step.type === 'timer' ? 'Silent practice' : step.label}</dt><dd>{formatCountdown(displayedDurations[index])}</dd></div>)}</dl>
       <div className="details-total"><span>Total duration</span><span>{formatCountdown(plan.totalSeconds)}</span></div>
       <p className="supporting">{isCustom ? 'All audio fits inside this duration. Playing more audio leaves less silent practice.' : 'The finish time is an estimate. Your full recording will play.'}</p>
       <button className="primary-button" onClick={() => setPanel(null)}>Done</button>

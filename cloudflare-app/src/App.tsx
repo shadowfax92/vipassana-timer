@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import './App.css'
 import type { SessionPlan } from './lib/sessionPlan'
 import { usePreferences } from './hooks/usePreferences'
@@ -15,6 +15,23 @@ function App() {
   const engine = useSessionEngine()
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null)
   const [preparing, setPreparing] = useState(false)
+  useEffect(() => {
+    // Safari can carry a focus ring through scripted dialog focus after a tap.
+    // Track input at the document boundary (including Tab from outside the app)
+    // before focus moves. This changes only its presentation, never focus itself.
+    const root = document.documentElement
+    const pointer = () => { root.dataset.focusInput = 'pointer' }
+    const keyboard = (event: KeyboardEvent) => {
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) delete root.dataset.focusInput
+    }
+    document.addEventListener('pointerdown', pointer, true)
+    document.addEventListener('keydown', keyboard, true)
+    return () => {
+      document.removeEventListener('pointerdown', pointer, true)
+      document.removeEventListener('keydown', keyboard, true)
+      delete root.dataset.focusInput
+    }
+  }, [])
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = preferences.theme
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', preferences.theme === 'dark' ? '#1B1E20' : '#F1F2F2')

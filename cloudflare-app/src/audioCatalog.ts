@@ -17,8 +17,8 @@ export const audioCatalog = {
   },
   "outroChanting": {
     "audioSrc": "/audio/chanting/default-outro.mp3",
-    "durationSeconds": 169.012245,
-    "sha256": "6e4ee2974ac84bb9881c95e5f3532f8447b6c2ac494b29c868da6c6831038ebb"
+    "durationSeconds": 169.000249,
+    "sha256": "9762ee9b8d48671f851febfca38265dd3bd35bba61c38afc75e3d977049d69d2"
   },
   "metta": {
     "audioSrc": "/audio/metta.mp3",
@@ -29,6 +29,16 @@ export const audioCatalog = {
     "audioSrc": "/audio/outro.mp3",
     "durationSeconds": 92.835215,
     "sha256": "f194f75487c1a8d90dc381f23b530efb29ce9dcb3d257e854199310070bf9dc5"
+  },
+  "mettaFadeIn": {
+    "audioSrc": "/audio/metta-fade-in.mp3",
+    "durationSeconds": 414.002698,
+    "sha256": "4ab82e20b5093466500180cb1c1f37544d958f1d090e830c38caabbb2d021a50"
+  },
+  "closingFadeIn": {
+    "audioSrc": "/audio/outro-fade-in.mp3",
+    "durationSeconds": 92.850794,
+    "sha256": "d2e56e8092fb078a3981f286dbdff500d165925e5a92bef7a58b7886de8f59ec"
   },
   "guidedShort": {
     "audioSrc": "/audio/guided/short.mp3",

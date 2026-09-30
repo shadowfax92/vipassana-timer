@@ -33,4 +33,12 @@ export function resolveSessionSteps(config: SessionConfig, metadata: Metadata): 
       return { id, ...definition, ...resolved }
     })
     .filter(step => step.enabled)
+    .map((step, index, steps) => {
+      const { fadeInAudioSrc, ...resolvedStep } = step
+      // Fade only the voice that returns after the silent meditation.
+      if (fadeInAudioSrc && steps[index - 1]?.type === 'timer') {
+        return { ...resolvedStep, audioSrc: fadeInAudioSrc }
+      }
+      return resolvedStep
+    })
 }

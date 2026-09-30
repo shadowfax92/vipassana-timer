@@ -11,7 +11,8 @@ function resolveOutroChanting(
   }
 
   if (config.outroDuration === "default") {
-    return { enabled: true, audioSrc: "/audio/chanting/default-outro.mp3" };
+    // The recording embeds a 60-second fade for mobile/background playback.
+    return { enabled: true, audioSrc: "/audio/chanting/default-outro.mp3", fadeInSeconds: 0 };
   }
 
   const file = selectChantingWithRetry(metadata, config.outroDuration);

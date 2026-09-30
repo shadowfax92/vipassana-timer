@@ -11,6 +11,7 @@ const files = {
   gong: 'gong.mp3', intro: 'chanting/default-intro.mp3',
   instructions: 'instructions.mp3', outroChanting: 'chanting/default-outro.mp3',
   metta: 'metta.mp3', closing: 'outro.mp3',
+  mettaFadeIn: 'metta-fade-in.mp3', closingFadeIn: 'outro-fade-in.mp3',
   guidedShort: 'guided/short.mp3', guidedLong: 'guided/long.mp3',
 }
 const catalog = Object.fromEntries(Object.entries(files).map(([key, file]) => {

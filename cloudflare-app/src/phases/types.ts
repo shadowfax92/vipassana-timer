@@ -11,5 +11,6 @@ export interface PhaseDefinition {
   label: string
   type: 'audio' | 'timer'
   fadeInSeconds?: number
+  fadeInAudioSrc?: string
   resolve: (config: SessionConfig, metadata: Metadata) => ResolvedPhase
 }

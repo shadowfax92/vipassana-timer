@@ -18,7 +18,7 @@ describe('setup duration accounting', () => {
       if (!result.ok) throw new Error(result.message)
       expect(sumDuration(result.plan.steps)).toBeCloseTo(totalMinutes * 60)
       expect(roundDurations(result.plan.steps.map(step => step.durationSeconds)).reduce((sum, seconds) => sum + seconds, 0)).toBe(totalMinutes * 60)
-      expect(result.plan.steps.at(-1)?.audioSrc).toBe('/audio/outro.mp3')
+      expect(result.plan.steps.at(-1)?.id).toBe('outro')
       expect(result.plan.steps.find(step => step.type === 'timer')?.durationSeconds).toBeGreaterThan(60)
     }
   })
@@ -29,6 +29,21 @@ describe('setup duration accounting', () => {
     expect(result.plan.steps.find(step => step.id === 'intro')?.fadeInSeconds).toBe(15)
     // The default ending recording already fades in; do not fade it twice.
     expect(result.plan.steps.find(step => step.id === 'outro_chanting')?.fadeInSeconds).toBe(0)
+  })
+  it.each([
+    { chanting: true, metta: true, first: 'outro_chanting', src: '/audio/chanting/default-outro.mp3' },
+    { chanting: true, metta: false, first: 'outro_chanting', src: '/audio/chanting/default-outro.mp3' },
+    { chanting: false, metta: true, first: 'metta', src: '/audio/metta-fade-in.mp3' },
+    { chanting: false, metta: false, first: 'outro', src: '/audio/outro-fade-in.mp3' },
+  ])('tests that only the first voice after silence fades: $first, metta=$metta', ({ chanting, metta, first, src }) => {
+    const result = buildSessionPlan({ ...defaultPreferences(),
+      outroDuration: chanting ? 'default' : 'none', enableMetta: metta })
+    if (!result.ok) throw new Error(result.message)
+    const ending = result.plan.steps.slice(result.plan.steps.findIndex(step => step.type === 'timer') + 1)
+    expect(ending[0]).toMatchObject({ id: first, audioSrc: src })
+    for (const step of ending.slice(1)) {
+      expect(step.audioSrc).toBe(step.id === 'metta' ? '/audio/metta.mp3' : '/audio/outro.mp3')
+    }
   })
   it.each([0, 1, 11, 45.5, 181, NaN])('rejects an invalid or overcrowded duration: %s', totalMinutes => {
     expect(buildSessionPlan({ ...defaultPreferences(), totalMinutes }).ok).toBe(false)

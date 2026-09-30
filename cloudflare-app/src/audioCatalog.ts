@@ -22,11 +22,21 @@ export const audioCatalog = {
   },
   "metta": {
     "audioSrc": "/audio/metta.mp3",
-    "durationSeconds": 414.002698,
-    "sha256": "4ab82e20b5093466500180cb1c1f37544d958f1d090e830c38caabbb2d021a50"
+    "durationSeconds": 414.014694,
+    "sha256": "fb4201c79fb848aa99fc268fed3e482bc03cdcfb0ca5b4ac471e26720cd82b3b"
   },
   "closing": {
     "audioSrc": "/audio/outro.mp3",
+    "durationSeconds": 92.835215,
+    "sha256": "f194f75487c1a8d90dc381f23b530efb29ce9dcb3d257e854199310070bf9dc5"
+  },
+  "mettaFadeIn": {
+    "audioSrc": "/audio/metta-fade-in.mp3",
+    "durationSeconds": 414.002698,
+    "sha256": "4ab82e20b5093466500180cb1c1f37544d958f1d090e830c38caabbb2d021a50"
+  },
+  "closingFadeIn": {
+    "audioSrc": "/audio/outro-fade-in.mp3",
     "durationSeconds": 92.850794,
     "sha256": "d2e56e8092fb078a3981f286dbdff500d165925e5a92bef7a58b7886de8f59ec"
   },

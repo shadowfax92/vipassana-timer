@@ -16,7 +16,7 @@ export const audioCatalog = {
     "sha256": "a5eae1cda0cd8dfc220961b4384a58ad421908f6b059783f328a5fc4108e14a4"
   },
   "outroChanting": {
-    "audioSrc": "/audio/chanting/default-outro.mp3",
+    "audioSrc": "/audio/chanting/default-outro-fade-in.mp3",
     "durationSeconds": 169.000249,
     "sha256": "9762ee9b8d48671f851febfca38265dd3bd35bba61c38afc75e3d977049d69d2"
   },

@@ -27,7 +27,8 @@ describe('setup duration accounting', () => {
     if (!result.ok) throw new Error(result.message)
     expect(result.plan.steps.map(step => step.id)).toEqual(['gong', 'intro', 'instructions', 'meditation', 'outro_chanting', 'metta', 'outro'])
     expect(result.plan.steps.find(step => step.id === 'intro')?.fadeInSeconds).toBe(15)
-    expect(result.plan.steps.find(step => step.id === 'outro_chanting')?.fadeInSeconds).toBe(15)
+    // The default ending recording already fades in; do not fade it twice.
+    expect(result.plan.steps.find(step => step.id === 'outro_chanting')?.fadeInSeconds).toBe(0)
   })
   it.each([0, 1, 11, 45.5, 181, NaN])('rejects an invalid or overcrowded duration: %s', totalMinutes => {
     expect(buildSessionPlan({ ...defaultPreferences(), totalMinutes }).ok).toBe(false)

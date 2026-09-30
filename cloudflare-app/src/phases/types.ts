@@ -4,6 +4,7 @@ export interface ResolvedPhase {
   enabled: boolean
   audioSrc?: string
   durationSeconds?: number
+  fadeInSeconds?: number
 }
 
 export interface PhaseDefinition {

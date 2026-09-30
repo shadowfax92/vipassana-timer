@@ -31,8 +31,8 @@ describe('setup duration accounting', () => {
     expect(result.plan.steps.find(step => step.id === 'outro_chanting')?.fadeInSeconds).toBe(0)
   })
   it.each([
-    { chanting: true, metta: true, first: 'outro_chanting', src: '/audio/chanting/default-outro.mp3' },
-    { chanting: true, metta: false, first: 'outro_chanting', src: '/audio/chanting/default-outro.mp3' },
+    { chanting: true, metta: true, first: 'outro_chanting', src: '/audio/chanting/default-outro-fade-in.mp3' },
+    { chanting: true, metta: false, first: 'outro_chanting', src: '/audio/chanting/default-outro-fade-in.mp3' },
     { chanting: false, metta: true, first: 'metta', src: '/audio/metta-fade-in.mp3' },
     { chanting: false, metta: false, first: 'outro', src: '/audio/outro-fade-in.mp3' },
   ])('tests that only the first voice after silence fades: $first, metta=$metta', ({ chanting, metta, first, src }) => {

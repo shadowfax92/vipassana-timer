@@ -1,5 +1,46 @@
 import { expect, test } from '@playwright/test'
 
+for (const recording of [
+  { value: 'vipassana', label: 'Vipassana instructions', duration: 156.003265, path: '/audio/instructions.mp3' },
+  { value: 'anapana', label: 'Anapana instructions', duration: 434.9, path: '/audio/anapana-instructions.mp3' },
+]) {
+  test(`custom ${recording.value} selection persists and plays the selected recording`, async ({ page }) => {
+    await page.goto('/')
+    const instructions = page.getByLabel('Instructions', { exact: true })
+    await expect(instructions.locator('option')).toHaveText(['Skip', 'Vipassana', 'Anapana'])
+    await instructions.selectOption(recording.value)
+    // Omit the opening audio so the first real playback proves the selected
+    // instructions reach the existing engine, including after a cookie reload.
+    await page.getByRole('button', { name: /Audio & gongs/ }).click()
+    await page.getByLabel('Opening gong', { exact: true }).selectOption('skip')
+    await page.getByLabel('Intro chanting', { exact: true }).selectOption('skip')
+    await page.getByRole('button', { name: 'Done', exact: true }).click()
+    await page.reload()
+    await expect(instructions).toHaveValue(recording.value)
+    await page.getByRole('button', { name: 'View session details' }).click()
+    await expect(page.locator('.session-details')).toContainText(recording.label)
+    await expect(page.locator('.details-total')).toContainText('60:00')
+    await page.getByRole('button', { name: 'Done', exact: true }).click()
+    const audioRequest = page.waitForRequest(request => new URL(request.url()).pathname === recording.path)
+    await page.getByRole('button', { name: /Start session/ }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Start session', exact: true }).click()
+    await audioRequest
+    await expect(page.getByRole('heading', { name: recording.label, exact: true })).toBeVisible()
+    const progress = page.getByRole('progressbar', { name: 'Recording progress' })
+    await expect.poll(async () => Number(await progress.getAttribute('value'))).toBeGreaterThan(0)
+    // Decoders may differ by an MP3 frame; both must play the complete clip.
+    expect(Number(await progress.getAttribute('max'))).toBeCloseTo(recording.duration, 0)
+    await page.getByRole('button', { name: 'Skip recording' }).click()
+    await expect(page.getByRole('button', { name: 'Skip silent practice' })).toBeVisible()
+    await page.getByRole('button', { name: 'End session' }).click()
+    await instructions.selectOption('skip')
+    await page.reload()
+    await expect(instructions).toHaveValue('skip')
+    await page.getByRole('button', { name: 'View session details' }).click()
+    await expect(page.locator('.session-details')).not.toContainText('instructions')
+  })
+}
+
 test('duration, live finish time and audio choices stay consistent', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-27T19:00:00-07:00') })
   await page.goto('/')

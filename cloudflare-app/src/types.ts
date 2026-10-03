@@ -20,11 +20,14 @@ export type SessionMode = "custom" | "guided";
 export type ChantingDuration = "2min" | "5min" | "default" | "none";
 export type MeditationDuration = number;
 export type InstructionType = "short" | "long";
+export type CustomInstructionType = "vipassana" | "anapana";
 
 export interface SessionConfig {
   mode: SessionMode;
   enableGong: boolean;
   enableInstructions: boolean;
+  // Custom recordings are independent of the short/long full guided sitting.
+  customInstructionType: CustomInstructionType;
   enableMetta: boolean;
   introDuration: ChantingDuration;
   outroDuration: ChantingDuration;

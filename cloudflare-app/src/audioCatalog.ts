@@ -20,6 +20,11 @@ export const audioCatalog = {
     "durationSeconds": 169.000249,
     "sha256": "9762ee9b8d48671f851febfca38265dd3bd35bba61c38afc75e3d977049d69d2"
   },
+  "anapanaInstructions": {
+    "audioSrc": "/audio/anapana-instructions.mp3",
+    "durationSeconds": 434.9,
+    "sha256": "d1d576be62bc8819fe9f27a244c1f436c79feb49cceffdb6b45934361f8480a5"
+  },
   "metta": {
     "audioSrc": "/audio/metta.mp3",
     "durationSeconds": 414.014694,

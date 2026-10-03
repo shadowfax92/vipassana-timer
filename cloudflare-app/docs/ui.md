@@ -8,7 +8,8 @@ The setup follows [Paper V5](https://app.paper.design/file/01M3JQHDG1JNYNF57JA5M
 - `audioCatalog.ts` records measured durations and source hashes. After changing a recording, run `npm run audio:metadata` (requires ffprobe); tests reject stale hashes.
 - `lib/preferences.ts` validates one versioned, one-year browser cookie for committed setup choices, theme and the start-reminder preference. Audio-sheet drafts are saved only by Done. The reminder choice is saved only by Start session in the popup. Clearing cookies restores the reminder.
 - `components/Dialog.tsx` owns modal keyboard traversal, trigger focus restoration and scroll locking. Native dialog supplies background inertness.
-- The session engine, phase implementations, background audio, worker timer and wake-lock code are unchanged. A selected 60-minute Custom sitting budgets recordings plus silent practice to 60 minutes. Playback buffering and manual Skip retain their existing behavior, so the finish-time preview is an estimate rather than a new wall-clock deadline.
+- Custom instructions offer Skip, Vipassana and Anapana. The instructions phase selects the recording and label for both the preview and player. Existing cookies keep their Play/Skip choice and default to Vipassana; the custom recording choice is independent of Guided mode's short/long selection. See [the selected Anapana excerpt](anapana-audio.md) for its source and exact range.
+- The session engine, background audio, worker timer and wake-lock code are unchanged. A selected 60-minute Custom sitting budgets recordings plus silent practice to 60 minutes. Playback buffering and manual Skip retain their existing behavior, so the finish-time preview is an estimate rather than a new wall-clock deadline.
 
 ## Responsive layout
 

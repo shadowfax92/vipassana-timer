@@ -17,6 +17,7 @@ export function defaultPreferences(theme: Theme = 'dark'): Preferences {
   return {
     version: 1, mode: 'custom', totalMinutes: 60,
     enableGong: true, enableInstructions: true, enableMetta: false,
+    customInstructionType: 'vipassana',
     introDuration: 'default', outroDuration: 'default', instructionType: 'short',
     theme, hideStartReminder: false,
   }
@@ -37,6 +38,9 @@ export function readPreferences(cookie: string, theme: Theme = 'dark'): Preferen
         && record.totalMinutes >= MIN_MINUTES && record.totalMinutes <= MAX_MINUTES ? record.totalMinutes : defaults.totalMinutes,
       enableGong: typeof record.enableGong === 'boolean' ? record.enableGong : defaults.enableGong,
       enableInstructions: typeof record.enableInstructions === 'boolean' ? record.enableInstructions : defaults.enableInstructions,
+      // Older cookies only stored Play/Skip. Keep that choice and use the
+      // existing Vipassana recording when no custom recording was saved.
+      customInstructionType: record.customInstructionType === 'anapana' ? 'anapana' : 'vipassana',
       enableMetta: typeof record.enableMetta === 'boolean' ? record.enableMetta : defaults.enableMetta,
       introDuration: record.introDuration === 'none' ? 'none' : 'default',
       outroDuration: record.outroDuration === 'none' ? 'none' : 'default',

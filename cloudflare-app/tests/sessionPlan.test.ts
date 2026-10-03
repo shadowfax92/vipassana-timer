@@ -7,10 +7,10 @@ import { buildSessionPlan, sumDuration } from '../src/lib/sessionPlan'
 import { roundDurations } from '../src/lib/time'
 
 describe('setup duration accounting', () => {
-  it('keeps every audio selection inside 30 and 60 minutes', () => {
+  it.each(['vipassana', 'anapana'] as const)('keeps every audio selection inside 30 and 60 minutes with %s', customInstructionType => {
     // Exercise every selection, not just the default sitting.
     for (const totalMinutes of [30, 60]) for (let mask = 0; mask < 32; mask++) {
-      const result = buildSessionPlan({ ...defaultPreferences(), totalMinutes,
+      const result = buildSessionPlan({ ...defaultPreferences(), totalMinutes, customInstructionType,
         enableGong: Boolean(mask & 1), enableInstructions: Boolean(mask & 2),
         enableMetta: Boolean(mask & 4), introDuration: mask & 8 ? 'default' : 'none',
         outroDuration: mask & 16 ? 'default' : 'none' })
@@ -21,6 +21,25 @@ describe('setup duration accounting', () => {
       expect(result.plan.steps.at(-1)?.id).toBe('outro')
       expect(result.plan.steps.find(step => step.type === 'timer')?.durationSeconds).toBeGreaterThan(60)
     }
+  })
+  it.each([
+    { customInstructionType: 'vipassana' as const, label: 'Vipassana instructions', audioSrc: '/audio/instructions.mp3', durationSeconds: 156.003265 },
+    { customInstructionType: 'anapana' as const, label: 'Anapana instructions', audioSrc: '/audio/anapana-instructions.mp3', durationSeconds: 434.9 },
+  ])('uses the selected $customInstructionType recording in full and omits it on Skip', ({ customInstructionType, ...recording }) => {
+    const settings = { ...defaultPreferences(), customInstructionType }
+    const result = buildSessionPlan(settings)
+    const skipped = buildSessionPlan({ ...settings, enableInstructions: false })
+    if (!result.ok) throw new Error(result.message)
+    if (!skipped.ok) throw new Error(skipped.message)
+    expect(result.plan.steps.find(step => step.id === 'instructions')).toMatchObject(recording)
+    expect(skipped.plan.steps.some(step => step.id === 'instructions')).toBe(false)
+    const silentSeconds = (steps: typeof result.plan.steps) => steps.find(step => step.type === 'timer')!.durationSeconds
+    expect(silentSeconds(skipped.plan.steps) - silentSeconds(result.plan.steps)).toBeCloseTo(recording.durationSeconds)
+    expect(result.plan.totalSeconds).toBe(skipped.plan.totalSeconds)
+  })
+  it('requires enough time for the longer Anapana instructions', () => {
+    expect(buildSessionPlan({ ...defaultPreferences(), customInstructionType: 'anapana', totalMinutes: 16 }).ok).toBe(false)
+    expect(buildSessionPlan({ ...defaultPreferences(), customInstructionType: 'anapana', totalMinutes: 17 }).ok).toBe(true)
   })
   it('preserves the existing phase order, recordings and fade settings', () => {
     const result = buildSessionPlan({ ...defaultPreferences(), enableMetta: true })
@@ -55,7 +74,7 @@ describe('setup duration accounting', () => {
     expect(buildSessionPlan({ ...settings, totalMinutes: 2 }).ok).toBe(false)
   })
   it.each(['short', 'long'] as const)('keeps the complete guided %s recording', instructionType => {
-    const result = buildSessionPlan({ ...defaultPreferences(), mode: 'guided', instructionType, totalMinutes: 1 })
+    const result = buildSessionPlan({ ...defaultPreferences(), mode: 'guided', instructionType, customInstructionType: 'anapana', totalMinutes: 1 })
     if (!result.ok) throw new Error(result.message)
     expect(result.plan.steps.map(step => step.id)).toEqual(['gong', 'guided'])
     const audio = instructionType === 'short' ? audioCatalog.guidedShort : audioCatalog.guidedLong

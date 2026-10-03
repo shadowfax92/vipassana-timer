@@ -109,8 +109,12 @@ export function SessionSetup(props: SetupProps) {
             <div className="setting-line">
               <label htmlFor="instructions">Instructions</label>
               <div className="plain-select select-wrap">
-                <select id="instructions" value={settings.enableInstructions ? 'play' : 'skip'} onChange={event => onChange({ enableInstructions: event.target.value === 'play' })}>
-                  <option value="skip">Skip</option><option value="play">Play</option>
+                <select id="instructions" value={settings.enableInstructions ? settings.customInstructionType : 'skip'} onChange={event => {
+                  const value = event.target.value
+                  if (value === 'skip') onChange({ enableInstructions: false })
+                  else if (value === 'vipassana' || value === 'anapana') onChange({ enableInstructions: true, customInstructionType: value })
+                }}>
+                  <option value="skip">Skip</option><option value="vipassana">Vipassana</option><option value="anapana">Anapana</option>
                 </select><Icon name="down" size={16} />
               </div>
             </div>

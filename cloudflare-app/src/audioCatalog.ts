@@ -56,8 +56,8 @@ export const audioCatalog = {
     "sha256": "6966799e208b816d3c63163b638709e012fef534bc74b63b944774adec9d1aa5"
   },
   "vipassanaGuided": {
-    "audioSrc": "/audio/guided/vipassana-guided-60min.mp4",
-    "durationSeconds": 3766.294,
-    "sha256": "6d613af8ffd9a7cfde5079c9be4077356bfff6807289769f474411055c184bf4"
+    "audioSrc": "/audio/guided/vipassana-guided-60min-v2.mp4",
+    "durationSeconds": 3652.293,
+    "sha256": "1a144c16a1e838755f7283c4eef0070c0f40219ed5ad3ace641589b2816b17e9"
   }
 } as const

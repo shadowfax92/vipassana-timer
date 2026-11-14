@@ -3,11 +3,12 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../src/App'
+import { audioCatalog } from '../src/audioCatalog'
 import { defaultPreferences, preferencesCookie } from '../src/lib/preferences'
 
 vi.hoisted(() => { URL.createObjectURL = () => 'blob:test-silent-audio' })
 
-const recordingPath = '/audio/guided/vipassana-guided-60min.mp4'
+const recordingPath = '/audio/guided/vipassana-guided-60min-v2.mp4'
 let root: Root
 let container: HTMLDivElement
 let played: Set<HTMLMediaElement>
@@ -66,7 +67,7 @@ beforeEach(async () => {
   })
   vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(function () {
     this.currentTime = 0
-    Object.defineProperty(this, 'duration', { configurable: true, value: 3766.336 })
+    Object.defineProperty(this, 'duration', { configurable: true, value: audioCatalog.vipassanaGuided.durationSeconds })
     this.dispatchEvent(new Event('loadedmetadata'))
   })
   document.cookie = preferencesCookie({ ...defaultPreferences(), mode: 'vipassana-guided',

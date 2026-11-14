@@ -14,7 +14,7 @@ describe('setup duration accounting', () => {
     expect(result.plan.mode).toBe('vipassana-guided')
     expect(result.plan.steps).toHaveLength(1)
     expect(result.plan.steps[0]).toMatchObject({ id: 'vipassana_guided', type: 'audio',
-      label: 'Vipassana (guided)', audioSrc: '/audio/guided/vipassana-guided-60min.m4a' })
+      label: 'Vipassana (guided)', audioSrc: '/audio/guided/vipassana-guided-60min.mp4' })
     expect(result.plan.totalSeconds).toBe(audioCatalog.vipassanaGuided.durationSeconds)
     expect(result.plan.totalSeconds).toBeGreaterThan(3600)
   })

@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { defaultPreferences, preferencesCookie, readPreferences, PREFERENCES_COOKIE } from '../src/lib/preferences'
 
 describe('browser preferences', () => {
+  it('tests that the new guided choice preserves custom duration and older guided choices', () => {
+    const saved = { ...defaultPreferences(), mode: 'vipassana-guided' as const,
+      totalMinutes: 40, instructionType: 'long' as const, customInstructionType: 'anapana' as const }
+    expect(readPreferences(preferencesCookie(saved, true))).toEqual(saved)
+  })
   it('round trips every saved choice in one cookie', () => {
     const saved = { ...defaultPreferences('light'), totalMinutes: 45, enableMetta: true,
       hideStartReminder: true, enableGong: false, enableInstructions: false,

@@ -14,6 +14,7 @@ const files = {
   metta: 'metta.mp3', closing: 'outro.mp3',
   mettaFadeIn: 'metta-fade-in.mp3', closingFadeIn: 'outro-fade-in.mp3',
   guidedShort: 'guided/short.mp3', guidedLong: 'guided/long.mp3',
+  vipassanaGuided: 'guided/vipassana-guided-60min-v2.mp4',
 }
 const catalog = Object.fromEntries(Object.entries(files).map(([key, file]) => {
   const path = fileURLToPath(new URL('../public/audio/' + file, import.meta.url))

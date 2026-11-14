@@ -5,6 +5,6 @@ export const vipassanaGuidedPhase: PhaseDefinition = {
   type: 'audio',
   resolve: () => ({
     enabled: true,
-    audioSrc: '/audio/guided/vipassana-guided-60min.m4a',
+    audioSrc: '/audio/guided/vipassana-guided-60min.mp4',
   }),
 }

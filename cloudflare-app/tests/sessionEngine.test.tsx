@@ -7,7 +7,7 @@ import { defaultPreferences, preferencesCookie } from '../src/lib/preferences'
 
 vi.hoisted(() => { URL.createObjectURL = () => 'blob:test-silent-audio' })
 
-const recordingPath = '/audio/guided/vipassana-guided-60min.m4a'
+const recordingPath = '/audio/guided/vipassana-guided-60min.mp4'
 let root: Root
 let container: HTMLDivElement
 let played: Set<HTMLMediaElement>

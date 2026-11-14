@@ -24,9 +24,6 @@ export class MediaKeepAlive {
   private active = false
   private progressCallback: ((progress: AudioProgress) => void) | null = null
   private fadeInterval: number | null = null
-  private playbackVersion = 0
-  private playAttempt = 0
-  private cancelPlayback: (() => void) | null = null
 
   /**
    * Set a callback to receive audio progress updates
@@ -42,16 +39,14 @@ export class MediaKeepAlive {
   async start(): Promise<void> {
     if (this.active) return
 
-    const audio = createSilentAudio()
-    this.silentAudio = audio
+    this.silentAudio = createSilentAudio()
 
     try {
-      await audio.play()
-      if (this.silentAudio !== audio) return
+      await this.silentAudio.play()
       this.active = true
       console.log('[MediaKeepAlive] Silent audio started')
     } catch (err) {
-      if (this.silentAudio === audio) throw err
+      console.error('[MediaKeepAlive] Failed to start:', err)
     }
   }
 
@@ -61,19 +56,20 @@ export class MediaKeepAlive {
    */
   async primeForSwap(audioElement: HTMLAudioElement): Promise<void> {
     if (!this.active) {
-      throw new Error('Unable to prepare audio. Please try again.')
+      console.warn('[MediaKeepAlive] Call start() first')
+      return
     }
 
     audioElement.src = SILENT_AUDIO
     audioElement.loop = true
     audioElement.volume = 0.01
-    this.primedAudio = audioElement
-    const version = this.playbackVersion
 
     try {
       await audioElement.play()
+      this.primedAudio = audioElement
+      console.log('[MediaKeepAlive] Audio element primed for swap')
     } catch (err) {
-      if (version === this.playbackVersion) throw err
+      console.error('[MediaKeepAlive] Failed to prime:', err)
     }
   }
 
@@ -88,16 +84,20 @@ export class MediaKeepAlive {
     newSrc: string,
     options?: { loop?: boolean; volume?: number; fadeInSeconds?: number }
   ): Promise<void> {
-    this.clearPlayback()
     return new Promise((resolve, reject) => {
       if (!this.primedAudio) {
-        reject(new Error('Audio is not ready. Please try again.'))
+        console.warn('[MediaKeepAlive] No primed audio element')
+        resolve()
         return
       }
 
       const audio = this.primedAudio
-      const version = this.playbackVersion
-      this.cancelPlayback = resolve
+
+      // Clear any existing fade interval
+      if (this.fadeInterval) {
+        clearInterval(this.fadeInterval)
+        this.fadeInterval = null
+      }
 
       // The magic: swap source on already-playing element
       audio.src = newSrc
@@ -132,7 +132,8 @@ export class MediaKeepAlive {
 
       // Set up onended handler before loading
       audio.onended = () => {
-        this.clearPlayback()
+        audio.onended = null
+        audio.ontimeupdate = null
         if (this.progressCallback) {
           this.progressCallback({ current: 0, duration: 0 })
         }
@@ -140,16 +141,16 @@ export class MediaKeepAlive {
       }
 
       audio.onerror = () => {
-        this.cancelPlayback = null
-        this.clearPlayback()
+        audio.onerror = null
+        audio.ontimeupdate = null
         reject(new Error(`Failed to play ${newSrc}`))
       }
 
       audio.load()
-      const attempt = ++this.playAttempt
+
       audio.play()
         .then(() => {
-          if (version !== this.playbackVersion || attempt !== this.playAttempt) return
+          console.log('[MediaKeepAlive] Source swapped and playing:', newSrc)
 
           // Apply fade-in after playback starts
           if (fadeInSeconds > 0) {
@@ -169,40 +170,10 @@ export class MediaKeepAlive {
           }
         })
         .catch((err) => {
-          if (version !== this.playbackVersion || attempt !== this.playAttempt) return
-          this.cancelPlayback = null
-          this.clearPlayback()
+          console.error('[MediaKeepAlive] Swap failed:', err)
           reject(err)
         })
     })
-  }
-
-  pausePlayback(): void {
-    ++this.playAttempt
-    this.primedAudio?.pause()
-  }
-
-  async resumePlayback(): Promise<void> {
-    const audio = this.primedAudio
-    if (!audio) throw new Error('Audio is not ready. Please try again.')
-    const attempt = ++this.playAttempt
-    try { await audio.play() }
-    catch (err) { if (attempt === this.playAttempt) throw err }
-  }
-
-  private clearPlayback(): void {
-    ++this.playbackVersion
-    ++this.playAttempt
-    if (this.fadeInterval !== null) clearInterval(this.fadeInterval)
-    this.fadeInterval = null
-    if (this.primedAudio) {
-      this.primedAudio.onended = null
-      this.primedAudio.ontimeupdate = null
-      this.primedAudio.onloadedmetadata = null
-      this.primedAudio.onerror = null
-    }
-    this.cancelPlayback?.()
-    this.cancelPlayback = null
   }
 
   /**
@@ -210,10 +181,16 @@ export class MediaKeepAlive {
    * Use this when skipping a phase but needing to play the next outro phase
    */
   stopPlayback(): void {
-    this.clearPlayback()
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval)
+      this.fadeInterval = null
+    }
 
     if (this.primedAudio) {
       this.primedAudio.pause()
+      this.primedAudio.onended = null
+      this.primedAudio.ontimeupdate = null
+      this.primedAudio.onerror = null
       // Re-prime with silent audio so it's ready for next swap
       this.primedAudio.src = SILENT_AUDIO
       this.primedAudio.loop = true
@@ -235,7 +212,10 @@ export class MediaKeepAlive {
    * Use this when session ends
    */
   stop(): void {
-    this.clearPlayback()
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval)
+      this.fadeInterval = null
+    }
 
     if (this.silentAudio) {
       this.silentAudio.pause()
@@ -245,6 +225,9 @@ export class MediaKeepAlive {
 
     if (this.primedAudio) {
       this.primedAudio.pause()
+      this.primedAudio.onended = null
+      this.primedAudio.ontimeupdate = null
+      this.primedAudio.onerror = null
       this.primedAudio = null
     }
 

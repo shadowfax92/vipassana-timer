@@ -33,7 +33,7 @@ export function readPreferences(cookie: string, theme: Theme = 'dark'): Preferen
     const record = value as Record<string, unknown>
     return {
       ...defaults,
-      mode: record.mode === 'guided' || record.mode === 'vipassana-guided' ? record.mode : defaults.mode,
+      mode: record.mode === 'guided' ? 'guided' : defaults.mode,
       totalMinutes: typeof record.totalMinutes === 'number' && Number.isInteger(record.totalMinutes)
         && record.totalMinutes >= MIN_MINUTES && record.totalMinutes <= MAX_MINUTES ? record.totalMinutes : defaults.totalMinutes,
       enableGong: typeof record.enableGong === 'boolean' ? record.enableGong : defaults.enableGong,

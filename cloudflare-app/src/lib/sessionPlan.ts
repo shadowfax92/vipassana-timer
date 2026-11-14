@@ -37,8 +37,8 @@ export function buildSessionPlan(settings: Preferences): PlanResult {
     measured.push({ ...step, durationSeconds })
   }
   const audioSeconds = sumDuration(measured)
-  if (settings.mode !== 'custom') {
-    return { ok: true, plan: { mode: settings.mode, steps: measured, totalSeconds: audioSeconds } }
+  if (settings.mode === 'guided') {
+    return { ok: true, plan: { mode: 'guided', steps: measured, totalSeconds: audioSeconds } }
   }
   if (!Number.isInteger(settings.totalMinutes) || settings.totalMinutes < MIN_MINUTES || settings.totalMinutes > MAX_MINUTES) {
     return { ok: false, message: 'Choose a whole number from 1 to 180 minutes.' }

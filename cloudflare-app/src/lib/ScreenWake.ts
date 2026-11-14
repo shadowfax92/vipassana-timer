@@ -14,7 +14,6 @@ export class ScreenWake {
   private video: HTMLVideoElement | null = null
   private enabled = false
   private useNativeWakeLock: boolean
-  private requestVersion = 0
 
   constructor() {
     this.useNativeWakeLock = 'wakeLock' in navigator
@@ -37,16 +36,9 @@ export class ScreenWake {
   }
 
   async enable(): Promise<void> {
-    if (this.wakeLock && !this.wakeLock.released) return
-    const version = ++this.requestVersion
     if (this.useNativeWakeLock) {
       try {
-        const wakeLock = await navigator.wakeLock.request('screen')
-        if (version !== this.requestVersion) {
-          await wakeLock.release()
-          return
-        }
-        this.wakeLock = wakeLock
+        this.wakeLock = await navigator.wakeLock.request('screen')
         this.enabled = true
         console.log('[ScreenWake] Wake Lock acquired')
 
@@ -54,7 +46,6 @@ export class ScreenWake {
           console.log('[ScreenWake] Wake Lock released')
         })
       } catch (err) {
-        if (version !== this.requestVersion) return
         console.warn('[ScreenWake] Wake Lock failed:', err)
         this.enabled = false
       }
@@ -62,11 +53,9 @@ export class ScreenWake {
       // Video fallback for browsers without Wake Lock API
       try {
         await this.video.play()
-        if (version !== this.requestVersion) return
         this.enabled = true
         console.log('[ScreenWake] Video fallback started')
       } catch (err) {
-        if (version !== this.requestVersion) return
         console.warn('[ScreenWake] Video fallback failed:', err)
         this.enabled = false
       }
@@ -74,9 +63,8 @@ export class ScreenWake {
   }
 
   disable(): void {
-    ++this.requestVersion
     if (this.useNativeWakeLock && this.wakeLock) {
-      void this.wakeLock.release().catch(() => {})
+      this.wakeLock.release()
       this.wakeLock = null
     } else if (this.video) {
       this.video.pause()

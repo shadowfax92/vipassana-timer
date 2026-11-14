@@ -7,9 +7,29 @@ import { buildSessionPlan, sumDuration } from '../src/lib/sessionPlan'
 import { roundDurations } from '../src/lib/time'
 
 describe('setup duration accounting', () => {
-  it.each(['vipassana', 'anapana'] as const)('keeps every audio selection inside 30 and 60 minutes with %s', customInstructionType => {
+  it.each([20, 40, 60, -5, 181, NaN])('tests that full guided Vipassana ignores saved duration %s and all custom audio', totalMinutes => {
+    const result = buildSessionPlan({ ...defaultPreferences(), mode: 'vipassana-guided', totalMinutes,
+      enableMetta: true, instructionType: 'long', customInstructionType: 'anapana' })
+    if (!result.ok) throw new Error(result.message)
+    expect(result.plan.mode).toBe('vipassana-guided')
+    expect(result.plan.steps).toHaveLength(1)
+    expect(result.plan.steps[0]).toMatchObject({ id: 'vipassana_guided', type: 'audio',
+      label: 'Vipassana (guided)', audioSrc: '/audio/guided/vipassana-guided-60min.m4a' })
+    expect(result.plan.totalSeconds).toBe(audioCatalog.vipassanaGuided.durationSeconds)
+    expect(result.plan.totalSeconds).toBeGreaterThan(3600)
+  })
+  it.each([20, 40, 60])('tests that switching back restores the %s-minute custom sitting', totalMinutes => {
+    const settings = { ...defaultPreferences(), totalMinutes }
+    const before = buildSessionPlan(settings)
+    buildSessionPlan({ ...settings, mode: 'vipassana-guided' })
+    const after = buildSessionPlan({ ...settings, mode: 'custom' })
+    expect(after).toEqual(before)
+    if (!after.ok) throw new Error(after.message)
+    expect(after.plan.totalSeconds).toBe(totalMinutes * 60)
+  })
+  it.each(['vipassana', 'anapana'] as const)('keeps every audio selection inside 30, 40 and 60 minutes with %s', customInstructionType => {
     // Exercise every selection, not just the default sitting.
-    for (const totalMinutes of [30, 60]) for (let mask = 0; mask < 32; mask++) {
+    for (const totalMinutes of [30, 40, 60]) for (let mask = 0; mask < 32; mask++) {
       const result = buildSessionPlan({ ...defaultPreferences(), totalMinutes, customInstructionType,
         enableGong: Boolean(mask & 1), enableInstructions: Boolean(mask & 2),
         enableMetta: Boolean(mask & 4), introDuration: mask & 8 ? 'default' : 'none',

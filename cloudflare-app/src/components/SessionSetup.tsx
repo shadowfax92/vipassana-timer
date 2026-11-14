@@ -88,6 +88,7 @@ export function SessionSetup(props: SetupProps) {
   const plan = result.ok ? result.plan : null
   const displayedDurations = plan ? roundDurations(plan.steps.map(step => step.durationSeconds)) : []
   const isCustom = settings.mode === 'custom'
+  const isFullGuided = settings.mode === 'vipassana-guided'
   const customDuration = settings.totalMinutes !== 30 && settings.totalMinutes !== 60
   return <main className="setup">
     <nav className="mode-tabs" aria-label="Session format">
@@ -130,13 +131,23 @@ export function SessionSetup(props: SetupProps) {
             <p className="supporting">A complete sitting with S. N. Goenka.</p>
             <div className="guided-instructions"><label htmlFor="guided-instructions">Instructions</label>
               <div className="select-wrap">
-                <select id="guided-instructions" value={settings.instructionType} onChange={event => onChange({ instructionType: event.target.value === 'long' ? 'long' : 'short' })}>
+                <select id="guided-instructions" value={isFullGuided ? 'vipassana-guided' : settings.instructionType} onChange={event => {
+                  const value = event.target.value
+                  if (value === 'vipassana-guided') onChange({ mode: 'vipassana-guided' })
+                  else if (value === 'short' || value === 'long') onChange({ mode: 'guided', instructionType: value })
+                }}>
                   <option value="short">Short instructions</option><option value="long">Long instructions</option>
+                  <option value="vipassana-guided">Vipassana (guided)</option>
                 </select><Icon name="down" size={16} />
               </div>
             </div>
-            <PlaySelect label="Opening gong" enabled={settings.enableGong} onChange={enableGong => onChange({ enableGong })} />
-            <p className="supporting">The full recording plays without a time limit.</p>
+            {isFullGuided ? <div>
+              <p>60 minutes only</p>
+              {plan && <p className="supporting">Full recording: {Math.floor(plan.totalSeconds / 60)} min {Math.round(plan.totalSeconds % 60)} sec. Plays to the end, including the closing guidance.</p>}
+            </div> : <>
+              <PlaySelect label="Opening gong" enabled={settings.enableGong} onChange={enableGong => onChange({ enableGong })} />
+              <p className="supporting">The full recording plays without a time limit.</p>
+            </>}
           </section>
         </>}
         {!result.ok && <p role="alert" className="validation-message">{result.message}</p>}

@@ -59,10 +59,12 @@ function App() {
     </header>
     {engine.status === 'idle' && !preparing && <SessionSetup preferences={preferences} onChange={updatePreferences} onStart={start} />}
     {engine.status === 'idle' && preparing && <main className="session"><div className="session-center"><p role="status">Preparing audio…</p></div></main>}
-    {engine.status === 'active' && <SessionActive label={engine.currentStep?.label ?? ''} timeRemaining={engine.timeRemaining}
-      progress={engine.progress} showProgressBar={engine.currentStep?.type === 'audio'} onSkip={engine.skip} onStop={engine.stopSession} />}
+    {(engine.status === 'active' || engine.status === 'paused') && <SessionActive label={engine.currentStep?.label ?? ''} timeRemaining={engine.timeRemaining}
+      progress={engine.progress} showProgressBar={engine.currentStep?.type === 'audio'} onSkip={engine.skip} onStop={engine.stopSession}
+      paused={engine.status === 'paused'} continuousGuided={engine.currentStep?.id === 'vipassana_guided'}
+      onPause={engine.pause} onResume={() => void engine.resume()} onReset={engine.resetSession} />}
     {engine.status === 'complete' && <SessionComplete onNewSession={engine.stopSession} />}
-    {engine.status === 'error' && <SessionError message={engine.errorMessage} onDismiss={engine.stopSession} />}
+    {engine.status === 'error' && <SessionError message={engine.errorMessage} onDismiss={engine.stopSession} onRetry={engine.resetSession} />}
     {pendingPlan && <StartReminder onClose={() => setPendingPlan(null)} onConfirm={hide => {
       // Only confirmation starts playback. Dismissing the popup neither consumes
       // sitting time nor saves the checkbox's unconfirmed draft value.

@@ -16,7 +16,7 @@ export interface Metadata {
   gong: string;
 }
 
-export type SessionMode = "custom" | "guided";
+export type SessionMode = "custom" | "guided" | "vipassana-guided";
 export type ChantingDuration = "2min" | "5min" | "default" | "none";
 export type MeditationDuration = number;
 export type InstructionType = "short" | "long";
@@ -44,7 +44,7 @@ export interface SessionStep {
   fadeInSeconds?: number;
 }
 
-export type SessionStatus = "idle" | "active" | "complete" | "error";
+export type SessionStatus = "idle" | "active" | "paused" | "complete" | "error";
 
 export interface AudioProgress {
   current: number;

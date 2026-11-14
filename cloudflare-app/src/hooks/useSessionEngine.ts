@@ -14,6 +14,8 @@ export function useSessionEngine() {
   const stepsRef = useRef<SessionStep[]>([])
   const indexRef = useRef(0)
   const statusRef = useRef<SessionStatus>('idle')
+  const generationRef = useRef(0)
+  const invalidatePlayback = useCallback(() => { ++generationRef.current }, [])
 
   const keepAliveRef = useRef<MediaKeepAlive | null>(null)
   const timerRef = useRef<ReliableTimer | null>(null)
@@ -46,12 +48,13 @@ export function useSessionEngine() {
     })
 
     return () => {
+      invalidatePlayback()
       keepAliveRef.current?.setProgressCallback(null)
       keepAliveRef.current?.stop()
       timerRef.current?.destroy()
       screenWakeRef.current?.destroy()
     }
-  }, [])
+  }, [invalidatePlayback])
 
   const teardownInfra = useCallback(() => {
     keepAliveRef.current?.stop()
@@ -61,11 +64,12 @@ export function useSessionEngine() {
   }, [])
 
   const stopCurrentStep = useCallback(() => {
+    invalidatePlayback()
     timerRef.current?.stop()
     keepAliveRef.current?.stopPlayback()
     setTimeRemaining(0)
     setProgress({ current: 0, duration: 0 })
-  }, [])
+  }, [invalidatePlayback])
 
   const handleError = useCallback((err: unknown) => {
     console.error('[SessionEngine] Fatal error:', err)
@@ -75,6 +79,7 @@ export function useSessionEngine() {
     setErrorMessage(err instanceof Error ? err.message : 'An unexpected error occurred')
 
     try {
+      if (stepsRef.current[indexRef.current]?.id === 'vipassana_guided') return
       const errorAudio = new Audio('/audio/gong.mp3')
       errorAudio.play().catch(() => {})
     } catch {
@@ -88,6 +93,7 @@ export function useSessionEngine() {
     const devSeconds = parseInt(import.meta.env.VITE_DEV_MEDITATION_SECONDS || '30', 10)
 
     executeStepRef.current = (step: SessionStep) => {
+      const generation = ++generationRef.current
       setCurrentStep(step)
       setTimeRemaining(0)
       setProgress({ current: 0, duration: 0 })
@@ -103,15 +109,15 @@ export function useSessionEngine() {
       if (step.type === 'audio' && step.audioSrc) {
         keepAliveRef.current?.swapAndPlay(step.audioSrc, { fadeInSeconds: step.fadeInSeconds })
           .then(() => {
-            if (statusRef.current === 'active') {
+            if (generation === generationRef.current && (statusRef.current === 'active' || statusRef.current === 'paused')) {
               advanceToNextRef.current()
             }
           })
-          .catch((err) => handleError(err))
+          .catch((err) => { if (generation === generationRef.current) handleError(err) })
 
-        if (devMode) {
+        if (devMode && step.id !== 'vipassana_guided') {
           setTimeout(() => {
-            if (statusRef.current === 'active') {
+            if (generation === generationRef.current && statusRef.current === 'active') {
               stopCurrentStep()
               advanceToNextRef.current()
             }
@@ -137,23 +143,44 @@ export function useSessionEngine() {
 
   const startSession = useCallback(async (steps: SessionStep[]) => {
     if (steps.length === 0) return
-
+    stopCurrentStep()
+    teardownInfra()
+    const generation = generationRef.current
     stepsRef.current = steps
     indexRef.current = 0
 
     try {
       await keepAliveRef.current?.start()
+      if (generation !== generationRef.current) return
       if (primedAudioRef.current) {
         await keepAliveRef.current?.primeForSwap(primedAudioRef.current)
       }
+      if (generation !== generationRef.current) return
       await screenWakeRef.current?.enable()
+      if (generation !== generationRef.current) return
 
       setStatusSync('active')
       setErrorMessage(null)
       executeStepRef.current(steps[0])
     } catch (err) {
-      handleError(err)
+      if (generation === generationRef.current) handleError(err)
     }
+  }, [handleError, setStatusSync, stopCurrentStep, teardownInfra])
+
+  const resetSession = useCallback(() => { void startSession(stepsRef.current) }, [startSession])
+
+  const pause = useCallback(() => {
+    if (statusRef.current !== 'active' || stepsRef.current[indexRef.current]?.id !== 'vipassana_guided') return
+    setStatusSync('paused')
+    keepAliveRef.current?.pausePlayback()
+  }, [setStatusSync])
+
+  const resume = useCallback(async () => {
+    if (statusRef.current !== 'paused') return
+    const generation = generationRef.current
+    setStatusSync('active')
+    try { await keepAliveRef.current?.resumePlayback() }
+    catch (err) { if (generation === generationRef.current) handleError(err) }
   }, [handleError, setStatusSync])
 
   const stopSession = useCallback(() => {
@@ -172,6 +199,9 @@ export function useSessionEngine() {
   return {
     startSession,
     stopSession,
+    resetSession,
+    pause,
+    resume,
     skip,
     status,
     currentStep,

@@ -54,5 +54,10 @@ export const audioCatalog = {
     "audioSrc": "/audio/guided/long.mp3",
     "durationSeconds": 3872.693696,
     "sha256": "6966799e208b816d3c63163b638709e012fef534bc74b63b944774adec9d1aa5"
+  },
+  "vipassanaGuided": {
+    "audioSrc": "/audio/guided/vipassana-guided-60min.m4a",
+    "durationSeconds": 3766.294,
+    "sha256": "6d613af8ffd9a7cfde5079c9be4077356bfff6807289769f474411055c184bf4"
   }
 } as const

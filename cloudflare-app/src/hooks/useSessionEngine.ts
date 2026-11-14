@@ -142,7 +142,10 @@ export function useSessionEngine() {
   }, [handleError, stopCurrentStep, teardownInfra, setStatusSync])
 
   const startSession = useCallback(async (steps: SessionStep[]) => {
-    if (steps.length === 0) return
+    if (steps.length === 0 || statusRef.current === 'preparing') return
+    setStatusSync('preparing')
+    setCurrentStep(null)
+    setErrorMessage(null)
     stopCurrentStep()
     teardownInfra()
     const generation = generationRef.current

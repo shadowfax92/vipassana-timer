@@ -14,7 +14,6 @@ function App() {
   const { preferences, updatePreferences } = usePreferences()
   const engine = useSessionEngine()
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null)
-  const [preparing, setPreparing] = useState(false)
   useEffect(() => {
     // Safari can carry a focus ring through scripted dialog focus after a tap.
     // Track input at the document boundary (including Tab from outside the app)
@@ -36,13 +35,7 @@ function App() {
     document.documentElement.dataset.theme = preferences.theme
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', preferences.theme === 'dark' ? '#1B1E20' : '#F1F2F2')
   }, [preferences.theme])
-  const begin = async (plan: SessionPlan) => {
-    // The engine owns audio, wake locks and timing. This local state only guards
-    // the Start UI during its existing asynchronous preparation.
-    setPreparing(true)
-    try { await engine.startSession(plan.steps) }
-    finally { setPreparing(false) }
-  }
+  const begin = (plan: SessionPlan) => engine.startSession(plan.steps)
   const start = (plan: SessionPlan) => {
     if (preferences.hideStartReminder) void begin(plan)
     else setPendingPlan(plan)
@@ -57,8 +50,11 @@ function App() {
         <Icon name={preferences.theme === 'dark' ? 'sun' : 'moon'} size={22} />
       </button>
     </header>
-    {engine.status === 'idle' && !preparing && <SessionSetup preferences={preferences} onChange={updatePreferences} onStart={start} />}
-    {engine.status === 'idle' && preparing && <main className="session"><div className="session-center"><p role="status">Preparing audio…</p></div></main>}
+    {engine.status === 'idle' && <SessionSetup preferences={preferences} onChange={updatePreferences} onStart={start} />}
+    {engine.status === 'preparing' && <main className="session">
+      <div className="session-center"><p role="status">Preparing audio…</p></div>
+      <div className="session-footer"><button className="secondary-button" onClick={engine.stopSession}>End session</button></div>
+    </main>}
     {(engine.status === 'active' || engine.status === 'paused') && <SessionActive label={engine.currentStep?.label ?? ''} timeRemaining={engine.timeRemaining}
       progress={engine.progress} showProgressBar={engine.currentStep?.type === 'audio'} onSkip={engine.skip} onStop={engine.stopSession}
       paused={engine.status === 'paused'} continuousGuided={engine.currentStep?.id === 'vipassana_guided'}

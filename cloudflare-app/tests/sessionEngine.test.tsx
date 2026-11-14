@@ -12,6 +12,9 @@ let root: Root
 let container: HTMLDivElement
 let played: Set<HTMLMediaElement>
 let failPlay: ((audio: HTMLMediaElement) => Promise<void> | undefined) | undefined
+let delayWake: boolean
+let resolveWake: () => void
+let wakeLocks: { released: boolean }[]
 
 function button(name: string) {
   const result = [...container.querySelectorAll('button')].find(item => item.textContent?.trim() === name)
@@ -41,8 +44,15 @@ async function start() {
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('matchMedia', () => ({ matches: true }))
+  delayWake = false
+  resolveWake = () => { throw Error('No pending wake request') }
+  wakeLocks = []
   Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: {
-    request: async () => Object.assign(new EventTarget(), { release: async () => {} }),
+    request: () => {
+      const lock = Object.assign(new EventTarget(), { released: false, release: async () => { lock.released = true } })
+      wakeLocks.push(lock)
+      return delayWake ? new Promise(resolve => { resolveWake = () => resolve(lock) }) : Promise.resolve(lock)
+    },
   } })
   played = new Set()
   failPlay = undefined
@@ -75,6 +85,56 @@ afterEach(async () => {
 })
 
 describe('continuous guided playback', () => {
+  it.each([false, true])('tests that reset preparation hides playback controls, including from paused=%s', async paused => {
+    await start()
+    if (paused) await click('Pause')
+    delayWake = true
+    await click('Reset recording')
+    expect(container.textContent).toContain('Preparing audio…')
+    expect([...container.querySelectorAll('button')].map(item => item.textContent).filter(Boolean)).toEqual(['End session'])
+    await act(async () => resolveWake())
+    expect(recording().paused).toBe(false)
+    expect(button('Pause')).toBeDefined()
+  })
+
+  it('tests that ending a pending reset releases the late wake lock and never starts audio', async () => {
+    await start()
+    delayWake = true
+    await click('Reset recording')
+    await click('End session')
+    await act(async () => resolveWake())
+    expect(container.textContent).toContain('60 minutes only')
+    expect(wakeLocks.every(lock => lock.released)).toBe(true)
+    expect([...played].every(audio => audio.paused)).toBe(true)
+  })
+
+  it('tests that a cancelled reset cannot release the next session wake lock', async () => {
+    await start()
+    delayWake = true
+    await click('Reset recording')
+    const finishOldRequest = resolveWake
+    await click('End session')
+    delayWake = false
+    await start()
+    await act(async () => finishOldRequest())
+    expect(wakeLocks.map(lock => lock.released)).toEqual([true, true, false])
+    expect(recording().paused).toBe(false)
+    await click('End session')
+    expect(wakeLocks.every(lock => lock.released)).toBe(true)
+  })
+
+  it('tests that overlapping reset clicks prepare only one new session', async () => {
+    await start()
+    delayWake = true
+    const reset = button('Reset recording')
+    await act(async () => { reset.click(); reset.click() })
+    await act(async () => resolveWake())
+    expect(wakeLocks.map(lock => lock.released)).toEqual([true, false])
+    expect(recording().paused).toBe(false)
+    await click('End session')
+    expect(wakeLocks.every(lock => lock.released)).toBe(true)
+  })
+
   it('tests that only nominal 60 minutes is offered and switching back keeps Custom and old Guided', async () => {
     expect(container.textContent).toContain('60 minutes only')
     expect(container.querySelector('.duration-presets')).toBeNull()

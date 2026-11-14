@@ -44,7 +44,7 @@ export interface SessionStep {
   fadeInSeconds?: number;
 }
 
-export type SessionStatus = "idle" | "active" | "paused" | "complete" | "error";
+export type SessionStatus = "idle" | "preparing" | "active" | "paused" | "complete" | "error";
 
 export interface AudioProgress {
   current: number;
